@@ -1,0 +1,49 @@
+{
+  "id": "intelli-hosp",
+  "protocol_handlers": [
+    {
+      "protocol": "mailto",
+      "url": "/about?type=%s"
+    }
+  ],
+  "name": "IntelliHosp",
+  "display": "standalone",
+  "start_url": "/",
+  "short_name": "IH",
+  "theme_color": "#3F72AF",
+  "description": "IntelliHosp este un PWA pentru gestionarea pacienților din spitale.",
+  "orientation": "any",
+  "background_color": "#F9F7F7",
+  "display_override": ["window-controls-overlay"],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "features": [
+    "Cross Platform",
+    "simplu",
+    "digital"
+  ],
+  "categories": [
+    "medical"
+  ],
+  "icons": [
+    {"src": "assets/icons/logo.png",
+    "sizes": "1280x1280",
+    "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {"src": "assets/icons/logo.png",
+    "sizes": "1280x1280",
+    "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open About",
+      "short_name": "About",
+      "description": "Open the about page",
+      "url": "/about"
+    }
+  ]
+}
