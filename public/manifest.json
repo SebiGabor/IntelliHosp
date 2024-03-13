@@ -27,15 +27,39 @@
     "medical"
   ],
   "icons": [
-    {"src": "assets/icons/logo.png",
+    {
+      "src": "assets/icons/logo_96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/logo_192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/logo_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {"src": "assets/icons/logo_1280x1280.png",
     "sizes": "1280x1280",
-    "type": "image/png"
+    "type": "image/png",
+    "purpose": "any"
     }
   ],
   "screenshots": [
-    {"src": "assets/icons/logo.png",
+    {"src": "assets/icons/logo_1280x1280.png",
     "sizes": "1280x1280",
     "type": "image/png"
+    },
+    {"src": "assets/icons/logo_1280x1280.png",
+    "sizes": "1280x1280",
+    "type": "image/png",
+    "form_factor": "wide"
     }
   ],
   "shortcuts": [
@@ -43,7 +67,14 @@
       "name": "Open About",
       "short_name": "About",
       "description": "Open the about page",
-      "url": "/about"
+      "url": "/about",
+      "icons": [
+        {
+          "src": "assets/icons/logo_96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
