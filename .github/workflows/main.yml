@@ -22,7 +22,7 @@ jobs:
         run:  chmod  -R  777 .
 
       - name: Setup Node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: '20.11'
 
@@ -45,7 +45,7 @@ jobs:
         run: cp dist/index.html dist/404.html
 
       - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v4
 
       - uses: actions/checkout@v4
         with:
