@@ -16,7 +16,10 @@ jobs:
     name: Build and Deploy Job
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Allow permissions
+        run:  chmod  -R  777
 
       - name: Setup Node
         uses: actions/setup-node@v1
@@ -44,7 +47,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v1
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
