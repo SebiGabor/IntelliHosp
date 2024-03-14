@@ -2,10 +2,10 @@ name: Deploy IntelliHosp to GitHub Pages
 
 on:
    push:
-    branches:
-    - '**'
-  pull_request:
-  workflow_dispatch:
+      branches:
+      - '**'
+   pull_request:
+   workflow_dispatch:
 
 jobs:
   build:
