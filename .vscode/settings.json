@@ -5,7 +5,5 @@
     "MD025": {
       "front_matter_title": ""
     }
-  },
-  "appService.defaultWebAppToDeploy": "undefined/subscriptions/d8ea8699-8de2-4c14-9f7e-672af9013893/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/IntelliHosp",
-  "appService.deploySubpath": ".",
+  }
 }

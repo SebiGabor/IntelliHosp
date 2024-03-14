@@ -6,7 +6,9 @@
       "outputLocation": "dist",
       "appBuildCommand": "npm run build --if-present",
       "run": "npm start",
-      "appDevserverUrl": "http://localhost:3000"
+      "appDevserverUrl": "https://kind-water-07f91991e.5.azurestaticapps.net/",
+      "appName": "intelli-hosp",
+      "resourceGroup": "intelli-hosp-rg"
     }
   }
 }
