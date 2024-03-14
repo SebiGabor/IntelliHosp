@@ -46,6 +46,9 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
+        with:
+          name: intelli-hosp
+          path: /
 
       - uses: actions/checkout@v4
         with:
