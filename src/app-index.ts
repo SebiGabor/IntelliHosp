@@ -17,27 +17,22 @@ export class AppIndex extends LitElement {
   `;
 
   firstUpdated() {
-    if (router !== undefined && router !== null){
-      router.addEventListener('route-changed', () => {
-        if ("startViewTransition" in document) {
-          (document as any).startViewTransition(() => {
-            this.addEventListener('updateComplete', () => {
-              console.log('Update complete!');
-          });
-          this.requestUpdate();
-          });
-        }
-        else {
+    router.addEventListener('route-changed', () => {
+      if ("startViewTransition" in document) {
+        (document as any).startViewTransition(() => {
           this.addEventListener('updateComplete', () => {
             console.log('Update complete!');
         });
         this.requestUpdate();
-        }
+        });
+      }
+      else {
+        this.addEventListener('updateComplete', () => {
+          console.log('Update complete!');
       });
-    }
-    else {
-      console.error('Router is not defined');
-    }
+      this.requestUpdate();
+      }
+    });
   }
 
   render() {

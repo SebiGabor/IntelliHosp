@@ -7,9 +7,6 @@ if (!(globalThis as any).URLPattern) {
 import { Router } from '@thepassle/app-tools/router.js';
 import { lazy } from '@thepassle/app-tools/router/plugins/lazy.js';
 
-// @ts-ignore
-import { title } from '@thepassle/app-tools/router/plugins/title.js';
-
 import './pages/app-home.js';
 
 const baseURL: string = (import.meta as any).env.BASE_URL || '';

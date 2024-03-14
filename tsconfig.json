@@ -21,7 +21,8 @@
       "types": [
           "vite-plugin-pwa/client",
           "vite/client"
-      ]
+      ],
+      "strictNullChecks": true
   },
   "include": ["src/**/*.ts", "router.d.ts"],
   "exclude": ["node_modules"]

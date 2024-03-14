@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "msedge",
+            "name": "Launch Chrome",
             "request": "launch",
-            "name": "Run PWA",
-            "webRoot": "${workspaceFolder}/",
+            "type": "chrome",
+            "webRoot": "${workspaceFolder}",
             "runtimeArgs": [
                 "--app=http://localhost:5173"
             ],
@@ -17,10 +17,19 @@
             "postDebugTask": "postdebugKill"
         },
         {
-            "name": "Launch Microsoft Edge and open the Edge DevTools",
+            "type": "msedge",
             "request": "launch",
-            "type": "vscode-edge-devtools.debug",
-            "url": "/"
+            "name": "Launch Edge",
+            "webRoot": "${workspaceFolder}/",
+            "runtimeArgs": [
+                "--app=http://localhost:5173"
+            ],
+            "sourceMapPathOverrides": {
+                "../../src": "${workspaceFolder}/src",
+                "../../src/*": "${workspaceFolder}/src/*"
+            },
+            "preLaunchTask": "npm run dev-task",
+            "postDebugTask": "postdebugKill"
         }
     ]
 }
