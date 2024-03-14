@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20.11'
+          node-version: '20.11.1'
 
       - name: Install Dependencies
         run: npm install
@@ -58,7 +58,7 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: "public"
+          output_location: "/"
 
 
 
