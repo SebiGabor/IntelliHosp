@@ -1,1 +1,0 @@
-{"version":3,"sources":["../public/sw.js"],"names":[],"mappings":"AAAA,cACI,yEACJ,EAEA,QAAQ,WAAW,iBAAiB,uZAAK,eAAiB,CAAA,CAAE","file":"sw.js","sourcesContent":["importScripts(\n    'https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js'\n);\n\nworkbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);"]}
