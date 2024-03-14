@@ -44,6 +44,11 @@ jobs:
       - name: Redirect 404 to Index for SPA
         run: cp dist/index.html dist/404.html
 
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: dist/
+
       - uses: actions/checkout@v4
         with:
           submodules: true
