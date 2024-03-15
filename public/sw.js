@@ -2,72 +2,57 @@ importScripts(
     'https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js'
 );
 
-const CACHE_NAME = 'Intelli-Hosp-cache';
-const urlsToCache = [
-    '../'
+const VERSION = "v1";
+const CACHE_NAME = `intelli-hosp-cache-${VERSION}`;
+
+const APP_STATIC_RESOURCES = [
+    '/',
+    '../index.html',
+    '../src'
 ];
 
-self.addEventListener('install', function(event) {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
+self.addEventListener("install", (event) => {
+    event.waitUntil(
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        cache.addAll(APP_STATIC_RESOURCES);
+      })(),
+    );
 });
 
-self.addEventListener('fetch', function(event) {
-    console.log('Fetch:', event.request.url);
-    if (event.request.url.includes('/swagger-ui/')) {
+self.addEventListener("fetch", (event) => {
+    if (event.request.mode === "navigate") {
+      event.respondWith(caches.match("/"));
       return;
     }
 
     event.respondWith(
-      caches.match(event.request)
-        .then(function(response) {
-          if (response) {
-            return response;
-          }
-
-          var fetchRequest = event.request.clone();
-
-          return fetch(fetchRequest).then(
-            function(response) {
-              if (!response || response.status !== 200 || response.type !== 'basic') {
-                return response;
-              }
-
-              var responseToCache = response.clone();
-
-              caches.open(CACHE_NAME)
-                .then(function(cache) {
-                  cache.put(event.request, responseToCache);
-                });
-
-              return response;
-            }
-          ).catch(function(error) {
-            console.error('Error fetching:', error);
-          });
-        })
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        const cachedResponse = await cache.match(event.request.url);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return new Response(null, { status: 404 });
+      })(),
     );
-  });
-
-
-self.addEventListener('activate', function(event) {
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheName === CACHE_NAME) {
-            return;
-          }
-          return caches.delete(cacheName);
-        })
-      );
-    })
-  );
 });
+
+self.addEventListener("activate", (event) => {
+    event.waitUntil(
+      (async () => {
+        const names = await caches.keys();
+        await Promise.all(
+          names.map((name) => {
+            if (name !== CACHE_NAME) {
+              return caches.delete(name);
+            }
+          }),
+        );
+        await clients.claim();
+      })(),
+    );
+});
+
 
 workbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);
