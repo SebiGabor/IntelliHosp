@@ -4,6 +4,7 @@ import { resolveRouterPath } from '../router';
 
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/input/input.js';
 
 import { styles } from '../styles/shared-styles';
 
@@ -11,47 +12,27 @@ import { styles } from '../styles/shared-styles';
 export class AppHome extends LitElement {
 
   @property() message = 'Bine ai venit la IntelliHosp!';
+  @property() username = '';
+  @property() password = '';
 
   static styles = [
     styles,
     css`
-    #welcomeBar {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
+    /* Add custom styles for the login form */
+    #loginForm {
+      max-width: 400px;
+      margin: 0 auto;
     }
 
-    #welcomeCard,
-    #infoCard {
+    #loginCard {
       padding: 18px;
-      padding-top: 0px;
     }
 
-    sl-card::part(footer) {
-      display: flex;
-      justify-content: flex-end;
+    sl-input, sl-button {
+      margin-bottom: 16px;
     }
-
-    @media(min-width: 750px) {
-      sl-card {
-        width: 70vw;
-      }
-    }
-
-
-    @media (horizontal-viewport-segments: 2) {
-      #welcomeBar {
-        flex-direction: row;
-        align-items: flex-start;
-        justify-content: space-between;
-      }
-
-      #welcomeCard {
-        margin-right: 64px;
-      }
-    }
-  `];
+    `
+  ];
 
   async firstUpdated() {
     console.log('Aceasta este pagina de start a aplicației IntelliHosp!');
@@ -62,21 +43,35 @@ export class AppHome extends LitElement {
       <app-header></app-header>
 
       <main>
-        <div id="welcomeBar">
-          <sl-card id="welcomeCard">
-            <div slot="header">
-              <h2>${this.message}</h2>
-            </div>
-
-            <p>
-              IntelliHosp este o aplicație web care își propune să faciliteze gestionarea informațiilor medicale și a planurilor de îngrijire a pacienților.
-            </p>
-
+        <div id="loginForm">
+          <sl-card id="loginCard">
+            <h2>${this.message}</h2>
+            <form @submit=${this.login}>
+              <sl-input label="Username" type="text" name="username" @input=${this.handleUsernameInput}></sl-input>
+              <sl-input label="Password" type="password" name="password" @input=${this.handlePasswordInput}></sl-input>
+              <sl-button type="primary" submit>Login</sl-button>
+            </form>
+            <sl-button href="${resolveRouterPath('about')}" variant="primary">Despre aplicație</sl-button>
           </sl-card>
-
-          <sl-button href="${resolveRouterPath('about')}" variant="primary">Despre aplicație</sl-button>
         </div>
       </main>
     `;
+  }
+
+  handleUsernameInput(event: InputEvent) {
+    const input = event.target as HTMLInputElement;
+    this.username = input.value;
+  }
+
+  handlePasswordInput(event: InputEvent) {
+    const input = event.target as HTMLInputElement;
+    this.password = input.value;
+  }
+
+  login(event: Event) {
+    event.preventDefault();
+    // Implement login logic here
+    console.log('Logging in with:', this.username, this.password);
+    // Redirect to the dashboard or perform any other necessary actions after login
   }
 }
