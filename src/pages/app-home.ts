@@ -18,7 +18,6 @@ export class AppHome extends LitElement {
   static styles = [
     styles,
     css`
-    /* Add custom styles for the login form */
     #loginForm {
       max-width: 400px;
       margin: 0 auto;
@@ -31,8 +30,21 @@ export class AppHome extends LitElement {
     sl-input, sl-button {
       margin-bottom: 16px;
     }
+
+    a[href] {
+      margin-top: 16px;
+        color: var(--ih-primary-color-2);
+        text-decoration: none;
+        border-bottom: 2px solid var(--ih-primary-color-2);
+        transition: color 0.3s ease, border-color 0.3s ease;
+
+        &:hover {
+          color: var(--ih-primary-color-3);
+          border-color: var(--ih-primary-color-3);
+        }
+    }
     `
-  ];
+];
 
   async firstUpdated() {
     console.log('Aceasta este pagina de start a aplicației IntelliHosp!');
@@ -49,9 +61,10 @@ export class AppHome extends LitElement {
             <form @submit=${this.login}>
               <sl-input label="Username" type="text" name="username" @input=${this.handleUsernameInput}></sl-input>
               <sl-input label="Password" type="password" name="password" @input=${this.handlePasswordInput}></sl-input>
-              <sl-button type="primary" submit>Login</sl-button>
+              <sl-button variant="primary" submit>Login</sl-button>
             </form>
-            <sl-button href="${resolveRouterPath('about')}" variant="primary">Despre aplicație</sl-button>
+            <sl-button href="${resolveRouterPath('about')}" type="primary">Despre aplicație</sl-button>
+            <a href="${resolveRouterPath('registerHospital')}">Înregistrați spitalul</a>
           </sl-card>
         </div>
       </main>
