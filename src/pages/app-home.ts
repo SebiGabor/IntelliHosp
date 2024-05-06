@@ -5,6 +5,7 @@ import { resolveRouterPath } from '../router';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
+import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 
 import { styles } from '../styles/shared-styles';
 
@@ -58,12 +59,14 @@ export class AppHome extends LitElement {
         <div id="loginForm">
           <sl-card id="loginCard">
             <h2>${this.message}</h2>
+            <div class="icon-button-color">
+              <sl-icon-button name="info-circle" href="${resolveRouterPath('about')}" label="Info"></sl-icon-button>
+            </div>
             <form @submit=${this.login}>
               <sl-input label="Username" type="text" name="username" @input=${this.handleUsernameInput}></sl-input>
-              <sl-input label="Password" type="password" name="password" @input=${this.handlePasswordInput}></sl-input>
+              <sl-input label="Parolă" type="password" name="password" @input=${this.handlePasswordInput}></sl-input>
               <sl-button variant="primary" submit>Login</sl-button>
             </form>
-            <sl-button href="${resolveRouterPath('about')}" type="primary">Despre aplicație</sl-button>
             <a href="${resolveRouterPath('registerHospital')}">Înregistrați spitalul</a>
           </sl-card>
         </div>
