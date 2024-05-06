@@ -23,32 +23,43 @@ export class AppRegister extends LitElement {
   static styles = [
     styles,
     css`
+    #registerForm {
+      max-width: 400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    #registerCard {
+      padding: 18px;
+    }
+    sl-input, sl-button, sl-select {
+      margin-bottom: 16px;
+      width: 100%;
+    }
+
+    a[href] {
+      margin-top: 16px;
+      color: var(--ih-primary-color-2);
+      text-decoration: none;
+      display: block;
+      transition: color 0.3s ease;
+      border-bottom: none;
+    }
+
+    a[href]:hover {
+      border-bottom: none;
+    }
+
+    @media (min-width: 768px) {
       #registerForm {
-        max-width: 400px;
-        margin: 0 auto;
+        max-width: 600px;
       }
-
-      #registerCard {
-        padding: 18px;
-      }
-
-      sl-input, sl-button, sl-select {
-        margin-bottom: 16px;
-      }
-
-      a[href] {
-        margin-top: 16px;
-        color: var(--ih-primary-color-2);
-        text-decoration: none;
-        border-bottom: 2px solid var(--ih-primary-color-2);
-        transition: color 0.3s ease, border-color 0.3s ease;
-
-        &:hover {
-          color: var(--ih-primary-color-3);
-          border-color: var(--ih-primary-color-3);
-        }
-      }
-    `
+    }
+  `
   ];
 
   render() {
