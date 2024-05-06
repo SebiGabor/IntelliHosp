@@ -6,50 +6,50 @@ import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
+import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 
 import { styles } from '../styles/shared-styles';
 
-import '@shoelace-style/shoelace/dist/components/card/card.js';
-
 @customElement('register-hospital')
 export class AppRegister extends LitElement {
+
   @property() hospitalName = '';
   @property() county = '';
-  @property() city = '';
   @property() adminEmail = '';
   @property() adminPassword = '';
-
+  @property() counties: { judet: string, cod: string }[] = [];
 
   static styles = [
     styles,
     css`
-    #registerForm {
-      max-width: 400px;
-      margin: 0 auto;
-    }
-
-    #registerCard {
-      padding: 18px;
-    }
-
-    sl-input, sl-button, sl-select {
-      margin-bottom: 16px;
-    }
-
-    a[href] {
-      margin-top: 16px;
-      color: var(--ih-primary-color-2);
-      text-decoration: none;
-      border-bottom: 2px solid var(--ih-primary-color-2);
-      transition: color 0.3s ease, border-color 0.3s ease;
-
-      &:hover {
-        color: var(--ih-primary-color-3);
-        border-color: var(--ih-primary-color-3);
+      #registerForm {
+        max-width: 400px;
+        margin: 0 auto;
       }
-    }`
-  ]
+
+      #registerCard {
+        padding: 18px;
+      }
+
+      sl-input, sl-button, sl-select {
+        margin-bottom: 16px;
+      }
+
+      a[href] {
+        margin-top: 16px;
+        color: var(--ih-primary-color-2);
+        text-decoration: none;
+        border-bottom: 2px solid var(--ih-primary-color-2);
+        transition: color 0.3s ease, border-color 0.3s ease;
+
+        &:hover {
+          color: var(--ih-primary-color-3);
+          border-color: var(--ih-primary-color-3);
+        }
+      }
+    `
+  ];
 
   render() {
     return html`
@@ -65,19 +65,7 @@ export class AppRegister extends LitElement {
             <form @submit=${this.register}>
               <sl-input label="Nume spital" type="text" name="hospitalName" @input=${this.handleHospitalNameInput}></sl-input>
               <sl-select label="Județ" name="county" @sl-change=${this.handleCountyChange}>
-                <sl-menu>
-                  <sl-menu-item value="county1">County 1</sl-menu-item>
-                  <sl-menu-item value="county2">County 2</sl-menu-item>
-                  <!-- Add more counties as needed -->
-                </sl-menu>
-              </sl-select>
-              <sl-select label="Localitate" name="city" @sl-change=${this.handleCityChange}>
-                <!-- Populate options based on selected county -->
-                <sl-menu>
-                  <sl-menu-item value="city1">City 1</sl-menu-item>
-                  <sl-menu-item value="city2">City 2</sl-menu-item>
-                  <!-- Add more cities as needed -->
-                </sl-menu>
+                ${this.counties.map(county => html`<sl-option value="${county.cod}">${county.judet}</sl-option>`)}
               </sl-select>
               <sl-input label="Email administrator" type="email" name="adminEmail" @input=${this.handleAdminEmailInput}></sl-input>
               <sl-input label="Parolă administrator" type="password" name="adminPassword" @input=${this.handleAdminPasswordInput}></sl-input>
@@ -97,12 +85,6 @@ export class AppRegister extends LitElement {
 
   handleCountyChange(event: CustomEvent) {
     this.county = (event.target as HTMLSelectElement).value;
-    // Reset city when county changes
-    this.city = '';
-  }
-
-  handleCityChange(event: CustomEvent) {
-    this.city = (event.target as HTMLSelectElement).value;
   }
 
   handleAdminEmailInput(event: InputEvent) {
@@ -118,8 +100,36 @@ export class AppRegister extends LitElement {
   register(event: Event) {
     event.preventDefault();
     // Implement registration logic here
-    console.log('Registering hospital with:', this.hospitalName, this.county, this.city, this.adminEmail, this.adminPassword);
+    console.log('Registering hospital with:', this.hospitalName, this.county, this.adminEmail, this.adminPassword);
     // Redirect to home or perform any other necessary actions after registration
   }
+
+  updated() {
+    // Call fetchCSV function to load and process the CSV
+    this.fetchCSV();
+    console.log(this.counties[0].judet)
+  }
+
+  fetchCSV() {
+    fetch('../assets/judete.csv')
+      .then(response => response.text())
+      .then(data => {
+        this.processData(data);
+      });
+  }
+
+  processData(csvData) {
+  // Split CSV data into rows
+  var rows = csvData.split('\n');
+  this.counties = [];
+
+  // Loop through rows and create options
+  rows.forEach(row => {
+    var [cod, judet] = row.split(',');
+    if (judet && cod) { // Ensure both judet and cod are not empty
+      this.counties.push({ judet: judet.trim(), cod: cod.trim() });
+    }
+  });
+}
 
 }
