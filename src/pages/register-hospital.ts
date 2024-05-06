@@ -44,7 +44,7 @@ export class AppRegister extends LitElement {
 
     @media (min-width: 768px) {
       #registerForm {
-        max-width: 600px;
+        max-width: 90%;
       }
     }
   `

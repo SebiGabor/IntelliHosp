@@ -23,13 +23,17 @@ export class AppHome extends LitElement {
     #loginForm {
       max-width: 600px;
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Center the form horizontally */
     }
 
     #loginCard {
       padding: 18px;
     }
 
-    sl-input, sl-button {
+    sl-input,
+    sl-button {
       margin-bottom: 16px;
     }
 
@@ -39,8 +43,15 @@ export class AppHome extends LitElement {
     }
 
     .icon-button-color sl-icon-button {
-      --icon-color: blue;
+      --icon-color: var(--ih-primary-color-2);
     }
+
+    @media (max-width: 768px) {
+      #loginForm {
+        max-width: 90%;
+      }
+    }
+
     `
   ];
 
