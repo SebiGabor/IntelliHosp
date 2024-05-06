@@ -23,4 +23,19 @@ export const styles = css`
   .icon-button-color sl-icon-button::part(base):active {
     color: #960077;
   }
+
+  a[href] {
+    margin-top: 16px;
+      color: var(--ih-primary-color-2);
+      text-decoration: none;
+      border-bottom: 2px solid var(--ih-primary-color-2);
+      transition: color 0.3s ease, border-color 0.3s ease;
+      border-bottom: none;
+
+      &:hover {
+        color: var(--ih-primary-color-3);
+        border-color: var(--ih-primary-color-3);
+        border-bottom: none;
+      }
+  }
 `;

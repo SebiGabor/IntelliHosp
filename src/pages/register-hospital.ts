@@ -7,7 +7,6 @@ import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
-import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 
 import { styles } from '../styles/shared-styles';
 
@@ -24,7 +23,7 @@ export class AppRegister extends LitElement {
     styles,
     css`
     #registerForm {
-      max-width: 400px;
+      max-width: 600px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -36,22 +35,10 @@ export class AppRegister extends LitElement {
     #registerCard {
       padding: 18px;
     }
+
     sl-input, sl-button, sl-select {
       margin-bottom: 16px;
       width: 100%;
-    }
-
-    a[href] {
-      margin-top: 16px;
-      color: var(--ih-primary-color-2);
-      text-decoration: none;
-      display: block;
-      transition: color 0.3s ease;
-      border-bottom: none;
-    }
-
-    a[href]:hover {
-      border-bottom: none;
     }
 
     @media (min-width: 768px) {
@@ -70,9 +57,6 @@ export class AppRegister extends LitElement {
         <div id="registerForm">
           <sl-card id="registerCard">
             <h2>Înregistrați spitalul</h2>
-            <div class="icon-button-color">
-              <sl-icon-button name="info-circle" href="${resolveRouterPath('about')}" label="Info"></sl-icon-button>
-            </div>
             <form @submit=${this.register}>
               <sl-input label="Nume spital" type="text" name="hospitalName" @input=${this.handleHospitalNameInput}></sl-input>
               <sl-select label="Județ" name="county" @sl-change=${this.handleCountyChange}>
@@ -115,10 +99,10 @@ export class AppRegister extends LitElement {
     // Redirect to home or perform any other necessary actions after registration
   }
 
-  updated() {
+  async firstUpdated() {
     // Call fetchCSV function to load and process the CSV
     this.fetchCSV();
-    console.log(this.counties[0].judet)
+    console.log(`This is the hospital registration page!`);
   }
 
   fetchCSV() {

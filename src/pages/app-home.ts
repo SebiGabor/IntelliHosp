@@ -6,6 +6,7 @@ import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
+import { registerIconLibrary } from '@shoelace-style/shoelace/dist/utilities/icon-library.js';
 
 import { styles } from '../styles/shared-styles';
 
@@ -20,7 +21,7 @@ export class AppHome extends LitElement {
     styles,
     css`
     #loginForm {
-      max-width: 400px;
+      max-width: 600px;
       margin: 0 auto;
     }
 
@@ -32,22 +33,21 @@ export class AppHome extends LitElement {
       margin-bottom: 16px;
     }
 
-    a[href] {
-      margin-top: 16px;
-        color: var(--ih-primary-color-2);
-        text-decoration: none;
-        border-bottom: 2px solid var(--ih-primary-color-2);
-        transition: color 0.3s ease, border-color 0.3s ease;
+    h2 {
+      display: inline-block;
+      margin-bottom: 16px;
+    }
 
-        &:hover {
-          color: var(--ih-primary-color-3);
-          border-color: var(--ih-primary-color-3);
-        }
+    .icon-button-color sl-icon-button {
+      --icon-color: blue;
     }
     `
-];
+  ];
 
   async firstUpdated() {
+    registerIconLibrary('default', {
+      resolver: name => `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.0.0/icons/${name}.svg`
+    });
     console.log('Aceasta este pagina de start a aplicației IntelliHosp!');
   }
 
@@ -59,9 +59,7 @@ export class AppHome extends LitElement {
         <div id="loginForm">
           <sl-card id="loginCard">
             <h2>${this.message}</h2>
-            <div class="icon-button-color">
-              <sl-icon-button name="info-circle" href="${resolveRouterPath('about')}" label="Info"></sl-icon-button>
-            </div>
+            <sl-icon-button name="info-circle" label="Info" href="${resolveRouterPath('about')}"></sl-icon-button>
             <form @submit=${this.login}>
               <sl-input label="Username" type="text" name="username" @input=${this.handleUsernameInput}></sl-input>
               <sl-input label="Parolă" type="password" name="password" @input=${this.handlePasswordInput}></sl-input>
