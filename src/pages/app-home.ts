@@ -13,7 +13,7 @@ import { styles } from '../styles/shared-styles';
 @customElement('app-home')
 export class AppHome extends LitElement {
 
-  @property() message = 'Bine ai venit la IntelliHosp!';
+  @property() message = 'Logare IntelliHosp';
   @property() username = '';
   @property() password = '';
 

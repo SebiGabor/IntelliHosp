@@ -13,6 +13,8 @@ import { styles } from '../styles/shared-styles';
 @customElement('register-hospital')
 export class AppRegister extends LitElement {
 
+  @property() title = 'Înregistrare spital';
+
   @property() hospitalName = '';
   @property() county = '';
   @property() adminEmail = '';
@@ -38,7 +40,6 @@ export class AppRegister extends LitElement {
 
     sl-input, sl-button, sl-select {
       margin-bottom: 16px;
-      width: 100%;
     }
 
     @media (min-width: 768px) {
@@ -56,7 +57,7 @@ export class AppRegister extends LitElement {
       <main>
         <div id="registerForm">
           <sl-card id="registerCard">
-            <h2>Înregistrați spitalul</h2>
+            <h2>${this.title}</h2>
             <form @submit=${this.register}>
               <sl-input label="Nume spital" type="text" name="hospitalName" @input=${this.handleHospitalNameInput}></sl-input>
               <sl-select label="Județ" name="county" @sl-change=${this.handleCountyChange}>
