@@ -1,0 +1,38 @@
+{
+    "data-source": {
+      "database-type": "postgresql",
+      "connection-string": "@env('DATABASE_CONNECTION_STRING')"
+    },
+    "runtime": {
+      "rest": {
+        "enabled": true,
+        "path": "/rest"
+      },
+      "graphql": {
+        "allow-introspection": true,
+        "enabled": true,
+        "path": "/graphql"
+      },
+      "host": {
+        "mode": "production",
+        "cors": {
+          "origins": ["http://localhost:5173"],
+          "allow-credentials": false
+        },
+        "authentication": {
+          "provider": "StaticWebApps"
+        }
+      }
+    },
+    "entities": {
+      "Person": {
+        "source": "dbo.MyTestPersonTable",
+        "permissions": [
+          {
+            "actions": ["create", "read", "update", "delete", "POST", "GET", "PUT", "DELETE"],
+            "role": "anonymous"
+          }
+        ]
+      }
+    }
+  }
