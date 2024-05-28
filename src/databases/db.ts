@@ -22,9 +22,7 @@ const pool = new Pool({
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors({
-  origin: 'http://localhost:5173'
-}));
+app.use(cors());
 
 app.get('/get-hospital', async (_req, res) => {
   try {
