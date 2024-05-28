@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
       "module": "esnext",
-      "target": "esnext",
+      "target": "es6",
       "lib": ["es2017", "esnext", "dom", "dom.iterable"],
       "declaration": true,
       "emitDeclarationOnly": true,
@@ -22,7 +22,9 @@
           "vite-plugin-pwa/client",
           "vite/client"
       ],
-      "strictNullChecks": true
+      "strictNullChecks": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true
   },
   "include": ["src/**/*.ts", "router.d.ts"],
   "exclude": ["node_modules"]

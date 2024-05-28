@@ -1,7 +1,7 @@
 import { html } from 'lit';
 
 if (!(globalThis as any).URLPattern) {
-  await import("urlpattern-polyfill");
+  import("urlpattern-polyfill");
 }
 
 import { Router } from '@thepassle/app-tools/router.js';

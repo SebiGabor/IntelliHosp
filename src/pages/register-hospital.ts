@@ -65,7 +65,7 @@ export class AppRegister extends LitElement {
               </sl-select>
               <sl-input label="Email administrator" type="email" name="adminEmail" @input=${this.handleAdminEmailInput}></sl-input>
               <sl-input label="Parolă administrator" type="password" name="adminPassword" @input=${this.handleAdminPasswordInput}></sl-input>
-              <sl-button variant="primary" submit>Înregistrează</sl-button>
+              <sl-button variant="primary" type="submit">Înregistrează</sl-button>
             </form>
             <a href="${resolveRouterPath('home')}">Înapoi la pagina de start</a>
           </sl-card>
@@ -93,10 +93,33 @@ export class AppRegister extends LitElement {
     this.adminPassword = input.value;
   }
 
-  register(event: Event) {
+  async register(event: Event) {
     event.preventDefault();
+
+    const hospitalName = this.hospitalName;
+    const county = this.county;
+    const adminEmail = this.adminEmail;
+    const adminPassword = this.adminPassword;
+
+    try {
+      const response = await fetch('/add-hospital', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ hospitalName, county, adminEmail, adminPassword }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error registering hospital');
+      }
+
+      alert('Spitalul a fost înregistrat cu succes!');
+    } catch (error) {
+      console.error('Error registering hospital:', error);
+    }
+
     // Implement registration logic here
-    console.log('Registering hospital with:', this.hospitalName, this.county, this.adminEmail, this.adminPassword);
     // Redirect to home or perform any other necessary actions after registration
   }
 
@@ -115,17 +138,16 @@ export class AppRegister extends LitElement {
   }
 
   processData(csvData) {
-  // Split CSV data into rows
-  var rows = csvData.split('\n');
-  this.counties = [];
+    // Split CSV data into rows
+    var rows = csvData.split('\n');
+    this.counties = [];
 
-  // Loop through rows and create options
-  rows.forEach(row => {
-    var [cod, judet] = row.split(',');
-    if (judet && cod) { // Ensure both judet and cod are not empty
-      this.counties.push({ judet: judet.trim(), cod: cod.trim() });
-    }
-  });
-}
-
+    // Loop through rows and create options
+    rows.forEach(row => {
+      var [cod, judet] = row.split(',');
+      if (judet && cod) { // Ensure both judet and cod are not empty
+        this.counties.push({ judet: judet.trim(), cod: cod.trim() });
+      }
+    });
+  }
 }

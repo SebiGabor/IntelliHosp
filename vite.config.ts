@@ -3,6 +3,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: "/",
+  server: {
+    proxy: {
+      '/add-hospital': 'http://localhost:3000',
+    },
+  },
   build: {
     sourcemap: true,
     assetsDir: "code",
