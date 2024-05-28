@@ -1,0 +1,11 @@
+[
+  {
+    "applyTo": "add-hospital",
+    "headers": [
+      {
+        "name": "allow",
+        "value": "GET, HEAD, OPTIONS, POST, PUT, DELETE"
+      }
+    ]
+  }
+]
