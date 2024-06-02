@@ -22,7 +22,9 @@ const pool = new Pool({
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = ['http://localhost:5173', 'https://white-grass-078bf751e.5.azurestaticapps.net'];
+
+app.use(cors({ origin: allowedOrigins }));
 app.use(bodyParser.json());
 
 app.get('/get-hospital', async (_req, res) => {
