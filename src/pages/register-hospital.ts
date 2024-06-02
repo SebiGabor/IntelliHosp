@@ -102,7 +102,14 @@ export class AppRegister extends LitElement {
     const adminPassword = this.adminPassword;
 
     try {
-      const response = await fetch('/add-hospital', {
+      let baseURL: string;
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          baseURL = 'http://localhost:3000';
+      } else {
+          baseURL = 'https://white-grass-078bf751e.5.azurestaticapps.net';
+      }
+
+      const response = await fetch(`${baseURL}/add-hospital`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
