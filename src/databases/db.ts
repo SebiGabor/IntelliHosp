@@ -2,6 +2,7 @@ import pkg from 'pg';
 import dotenv from 'dotenv';
 import express from 'express';
 import bodyParser from 'body-parser';
+import cors from 'cors';
 
 const { Pool } = pkg;
 
@@ -20,6 +21,8 @@ const pool = new Pool({
 });
 
 const app = express();
+
+app.use(cors());
 app.use(bodyParser.json());
 
 app.get('/get-hospital', async (_req, res) => {
