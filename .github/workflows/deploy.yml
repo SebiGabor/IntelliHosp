@@ -46,7 +46,7 @@ jobs:
           app_location: "/"
           api_location: ""
           output_location: "/dist"
-           config_file_location: .
+          config_file_location: .
 
 
 
