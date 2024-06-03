@@ -18,7 +18,6 @@ export class AppRegister extends LitElement {
   @property() hospitalName = '';
   @property() county = '';
   @property() adminEmail = '';
-  @property() adminPassword = '';
   @property() counties: { judet: string, cod: string }[] = [];
 
   static styles = [
@@ -64,7 +63,6 @@ export class AppRegister extends LitElement {
                 ${this.counties.map(county => html`<sl-option value="${county.cod}">${county.judet}</sl-option>`)}
               </sl-select>
               <sl-input label="Email administrator" type="email" name="adminEmail" @input=${this.handleAdminEmailInput}></sl-input>
-              <sl-input label="Parolă administrator" type="password" name="adminPassword" @input=${this.handleAdminPasswordInput}></sl-input>
               <sl-button variant="primary" type="submit">Înregistrează</sl-button>
             </form>
             <a href="${resolveRouterPath('home')}">Înapoi la pagina de start</a>
@@ -88,33 +86,20 @@ export class AppRegister extends LitElement {
     this.adminEmail = input.value;
   }
 
-  handleAdminPasswordInput(event: InputEvent) {
-    const input = event.target as HTMLInputElement;
-    this.adminPassword = input.value;
-  }
-
   async register(event: Event) {
     event.preventDefault();
 
     const hospitalName = this.hospitalName;
     const county = this.county;
     const adminEmail = this.adminEmail;
-    const adminPassword = this.adminPassword;
 
     try {
-      let baseURL: string;
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          baseURL = 'http://localhost:3000';
-      } else {
-          baseURL = 'https://white-grass-078bf751e.5.azurestaticapps.net';
-      }
-
-      const response = await fetch(`${baseURL}/add-hospital`, {
+      const response = await fetch('/add-hospital', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ hospitalName, county, adminEmail, adminPassword }),
+        body: JSON.stringify({ hospitalName, county, adminEmail }),
       });
 
       if (!response.ok) {

@@ -4,6 +4,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import nodemailer from 'nodemailer';
+import generator from 'generate-password';
 
 const { Pool } = pkg;
 
@@ -68,25 +69,32 @@ app.get('/get-hospital', async (_req, res) => {
 });
 
 app.post('/add-hospital', async (req, res) => {
-  const { hospitalName, county, adminEmail, adminPassword } = req.body;
+  const { hospitalName, county, adminEmail } = req.body;
 
-  if (!hospitalName || !county || !adminEmail || !adminPassword) {
+  if (!hospitalName || !county || !adminEmail) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
     const client = await pool.connect();
-    const queryText = 'INSERT INTO public.ih_hospitals ("Nume", "Judet", "AdminEmail", "AdminPassword") VALUES ($1, $2, $3, $4)';
-    const result = await client.query(queryText, [hospitalName, county, adminEmail, adminPassword]);
+    const { rows } = await client.query("SELECT nextval('public.ih_hospitals_id_seq');");
+    const sequenceValue = rows[0].nextval;
+    const username = `admin_${sequenceValue}`;
+    console.log("USERNAMEEEEE:    " + username);
+    var password = generator.generate({
+      length: 12,
+      numbers: true
+    });
+
+    const insertQuery = 'INSERT INTO public.ih_hospitals ("Nume", "Judet", "AdminEmail", "AdminPassword", "AdminUsername") VALUES ($1, $2, $3, $4, $5)';
+    const result = await client.query(insertQuery, [hospitalName, county, adminEmail, password, username]);
     client.release();
-
-
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: adminEmail,
-      subject: 'Hospital Registration Confirmation',
-      text: `Dear ${hospitalName},\n\nYour hospital has been successfully registered.\n\nRegards,\nTeam`,
+      subject: 'Confirmare înregistrare spital - IntelliHosp',
+      text: `Bine ați venit în aplicația IntelliHosp!\n\n Credențialele de logare pentru ${hospitalName} sunt:\nUsername: ${username}\nParolă: ${password}\n\nVă mulțumim pentru alegerea făcută!`,
     };
 
     transporter.sendMail(mailOptions, (error: any, info: { response: string; }) => {
