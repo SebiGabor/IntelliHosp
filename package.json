@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start:dev": "ts-node src/databases/db.ts",
+    "start:dev": "ts-node src/backend/database.ts",
     "dev-server": "vite --open",
-    "dev": "concurrently \"npm run dev-server\" \"node --loader ts-node/esm src/databases/db.ts\"",
+    "dev": "concurrently \"npm run dev-server\" \"node --loader ts-node/esm src/backend/database.ts\"",
     "dev-task": "vite",
     "deploy": "npx @azure/static-web-apps-cli login --no-use-keychain && npx @azure/static-web-apps-cli deploy",
     "build": "tsc && vite build",

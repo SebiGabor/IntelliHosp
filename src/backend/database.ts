@@ -80,14 +80,13 @@ app.post('/add-hospital', async (req, res) => {
     const { rows } = await client.query("SELECT nextval('public.ih_hospitals_id_seq');");
     const sequenceValue = rows[0].nextval;
     const username = `admin_${sequenceValue}`;
-    console.log("USERNAMEEEEE:    " + username);
     var password = generator.generate({
       length: 12,
       numbers: true
     });
 
-    const insertQuery = 'INSERT INTO public.ih_hospitals ("Nume", "Judet", "AdminEmail", "AdminPassword", "AdminUsername") VALUES ($1, $2, $3, $4, $5)';
-    const result = await client.query(insertQuery, [hospitalName, county, adminEmail, password, username]);
+    const insertQuery = 'INSERT INTO public.ih_hospitals ("Nume", "Judet", "AdminEmail", "AdminUsername", "AdminPassword") VALUES ($1, $2, $3, $4, $5)';
+    const result = await client.query(insertQuery, [hospitalName, county, adminEmail, username, password ]);
     client.release();
 
     const mailOptions = {
