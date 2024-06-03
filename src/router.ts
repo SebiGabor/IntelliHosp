@@ -15,24 +15,32 @@ export const router = new Router({
   routes: [
     {
       path: resolveRouterPath(),
-      title: 'Home',
+      title: 'Acasă',
       render: () => html`<app-home></app-home>`
     },
     {
       path: resolveRouterPath('about'),
-      title: 'About',
+      title: 'Despre',
       plugins: [
-        lazy(() => import('./pages/app-about/app-about.js')),
+        lazy(() => import('./pages/app-about.js')),
       ],
       render: () => html`<app-about></app-about>`
     },
     {
       path: resolveRouterPath('registerHospital'),
-      title: 'Register Hospital',
+      title: 'Înregistrare spital',
       plugins: [
         lazy(() => import('./pages/register-hospital.js')),
       ],
       render: () => html`<register-hospital></register-hospital>`
+    },
+    {
+      path: resolveRouterPath('hospRegisterSuccess'),
+      title: 'Spital înregistrat cu succes',
+      plugins: [
+        lazy(() => import('./pages/hosp-register-success.js')),
+      ],
+      render: () => html`<hosp-register-success></hosp-register-success>`
     }
   ]
 }) ?? new Router();

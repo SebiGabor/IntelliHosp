@@ -1,6 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
-import { resolveRouterPath } from '../router';
+import { router, resolveRouterPath } from '../router';
 
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
@@ -106,17 +106,15 @@ export class AppRegister extends LitElement {
         throw new Error('Error registering hospital');
       }
 
-      alert('Spitalul a fost înregistrat cu succes!');
+      router.navigate(resolveRouterPath('hospRegisterSuccess'));
+
     } catch (error) {
+      alert('A apărut o eroare la înregistrarea spitalului. Vă rugăm să încercați din nou.');
       console.error('Error registering hospital:', error);
     }
-
-    // Implement registration logic here
-    // Redirect to home or perform any other necessary actions after registration
   }
 
   async firstUpdated() {
-    // Call fetchCSV function to load and process the CSV
     this.fetchCSV();
     console.log(`This is the hospital registration page!`);
   }
@@ -130,14 +128,12 @@ export class AppRegister extends LitElement {
   }
 
   processData(csvData) {
-    // Split CSV data into rows
     var rows = csvData.split('\n');
     this.counties = [];
 
-    // Loop through rows and create options
     rows.forEach(row => {
       var [cod, judet] = row.split(',');
-      if (judet && cod) { // Ensure both judet and cod are not empty
+      if (judet && cod) {
         this.counties.push({ judet: judet.trim(), cod: cod.trim() });
       }
     });

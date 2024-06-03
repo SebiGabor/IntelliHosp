@@ -63,7 +63,7 @@ export class AppHeader extends LitElement {
 
         <div id="back-button-block">
           ${this.enableBack ? html`<sl-button href="${resolveRouterPath()}">
-            Back
+            Înapoi
           </sl-button>` : null}
 
           <h1>${this.title}</h1>
