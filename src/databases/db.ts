@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
+import nodemailer from 'nodemailer';
 
 const { Pool } = pkg;
 
@@ -40,6 +41,19 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
+const transporter = nodemailer.createTransport({
+  host: 'smtp-mail.outlook.com',
+  secureConnection: false,
+  port: 587,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    ciphers:'SSLv3'
+  }
+});
+
 app.get('/get-hospital', async (_req, res) => {
   try {
     const client = await pool.connect();
@@ -65,6 +79,24 @@ app.post('/add-hospital', async (req, res) => {
     const queryText = 'INSERT INTO public.ih_hospitals ("Nume", "Judet", "AdminEmail", "AdminPassword") VALUES ($1, $2, $3, $4)';
     const result = await client.query(queryText, [hospitalName, county, adminEmail, adminPassword]);
     client.release();
+
+
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: adminEmail,
+      subject: 'Hospital Registration Confirmation',
+      text: `Dear ${hospitalName},\n\nYour hospital has been successfully registered.\n\nRegards,\nTeam`,
+    };
+
+    transporter.sendMail(mailOptions, (error: any, info: { response: string; }) => {
+      if (error) {
+        console.error(error);
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
+    });
+
     res.status(201).json(result.rows[0]);
     return;
   } catch (err) {
