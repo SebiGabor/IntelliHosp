@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/add-hospital': 'http://localhost:3000',
+      '/admin-login': 'http://localhost:3000',
     },
   },
   build: {

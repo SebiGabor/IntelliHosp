@@ -1,6 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
-import { resolveRouterPath } from '../router';
+import { router, resolveRouterPath } from '../router';
 
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
@@ -74,7 +74,7 @@ export class AppHome extends LitElement {
             <form @submit=${this.login}>
               <sl-input label="Username" type="text" name="username" @input=${this.handleUsernameInput}></sl-input>
               <sl-input label="Parolă" type="password" name="password" @input=${this.handlePasswordInput}></sl-input>
-              <sl-button variant="primary" submit>Login</sl-button>
+              <sl-button variant="primary" type="submit">Login</sl-button>
             </form>
             <a href="${resolveRouterPath('registerHospital')}">Înregistrați spitalul</a>
           </sl-card>
@@ -93,10 +93,38 @@ export class AppHome extends LitElement {
     this.password = input.value;
   }
 
-  login(event: Event) {
+  async login(event: Event) {
     event.preventDefault();
-    // Implement login logic here
-    console.log('Logging in with:', this.username, this.password);
-    // Redirect to the dashboard or perform any other necessary actions after login
+
+    try {
+      const response = await fetch('/admin-login', { // Updated URL
+        // Updated URL
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: this.username,
+          password: this.password
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Login failed');
+        return;
+      }
+
+      const data = await response.json();
+      const hospitalName = data.hospitalName;
+
+      // Store the hospital name in local storage
+      localStorage.setItem('hospitalName', hospitalName);
+
+      // Redirect to admin home page
+      router.navigate(resolveRouterPath('admin-home'));
+
+    } catch (error) {
+      console.error('Error during login:', error);
+    }
   }
 }

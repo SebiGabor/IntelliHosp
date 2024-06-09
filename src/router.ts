@@ -41,6 +41,14 @@ export const router = new Router({
         lazy(() => import('./pages/hosp-register-success.js')),
       ],
       render: () => html`<hosp-register-success></hosp-register-success>`
+    },
+    {
+      path: resolveRouterPath('admin-home'),
+      title: 'Admin Home',
+      plugins: [
+        lazy(() => import('./pages/admin-home.js')),
+      ],
+      render: () => html`<admin-home></admin-home>`
     }
   ]
 }) ?? new Router();
