@@ -114,12 +114,12 @@ app.post('/admin-login', async (req, res) => {
     client.release();
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ error: "Username not found" });
     }
 
     const hospital = result.rows[0];
     if (hospital.AdminPassword !== password) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ error: "Incorrect password" });
     }
 
     loggedInData.setHospitalName(hospital.Nume);

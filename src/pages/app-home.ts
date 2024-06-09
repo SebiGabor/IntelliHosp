@@ -110,7 +110,14 @@ export class AppHome extends LitElement {
       });
 
       if (!response.ok) {
-        console.error('Login failed');
+        const errorData = await response.json();
+        if (errorData.error === "Username not found") {
+          alert("Username-ul nu a fost găsit!");
+        } else if (errorData.error === "Incorrect password") {
+          alert("Parolă incorrectă!");
+        } else {
+          alert(`Login failed: ${errorData.error}`);
+        }
         return;
       }
 
