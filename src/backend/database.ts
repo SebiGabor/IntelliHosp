@@ -15,8 +15,6 @@ dotenv.config();
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
 const DB_PORT = process.env.DB_PORT || 5432;
 
-//var hospitalNameLogin = "";
-
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -58,19 +56,6 @@ const transporter = nodemailer.createTransport({
     ciphers:'SSLv3'
   }
 });
-
-/*app.get('/get-hospital', async (_req, res) => {
-  try {
-    const client = await pool.connect();
-    const result = await client.query('SELECT * FROM ih_hospitals');
-    const results = { 'results': (result) ? result.rows : null};
-    client.release();
-    res.json(results);
-  } catch (err) {
-    console.error("Error executing querry: ", err);
-    res.status(500).json({error: "Internal error"});
-  }
-});*/
 
 app.post('/add-hospital', async (req, res) => {
   const { hospitalName, county, adminEmail } = req.body;
@@ -147,39 +132,6 @@ app.post('/admin-login', async (req, res) => {
     return;
   }
 });
-
-/*app.post('/admin-login', async (req, res) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).json({ error: "Username and password are required" });
-  }
-
-  try {
-    const client = await pool.connect();
-    const result = await client.query('SELECT "Nume", "AdminPassword" FROM public.ih_hospitals WHERE "AdminUsername" = $1', [username]);
-    client.release();
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    const hospital = result.rows[0];
-    if (hospital.AdminPassword !== password) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    hospitalNameLogin = hospital.Nume;
-
-    res.status(200).json({ hospitalName: hospital.Nume });
-    return;
-  } catch (err) {
-    console.error("Error executing query: ", (err as Error).message, (err as Error).stack);
-    res.status(500).json({ error: "Internal error", details: (err as Error).message });
-    return;
-  }
-});*/
-
 
 app.listen(SERVER_PORT, () => {
   console.log(`Server is running on port ${SERVER_PORT}`);
