@@ -1,9 +1,9 @@
-import { LitElement, html } from 'lit';
+import { LitElement, html, css } from 'lit';
 import { customElement } from 'lit/decorators.js';
 
-import { styles } from './about-styles';
+import { styles } from '../styles/information-styles';
 
-import { styles as sharedStyles } from '../../styles/shared-styles'
+import { styles as sharedStyles } from '../styles/shared-styles'
 
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 
@@ -11,7 +11,26 @@ import '@shoelace-style/shoelace/dist/components/card/card.js';
 export class AppAbout extends LitElement {
   static styles = [
     sharedStyles,
-    styles
+    styles,
+    css`
+    :host {
+      display: block;
+      margin: auto; /* Center the component horizontally */
+      max-width: 800px; /* Set maximum width for responsiveness */
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Center its children horizontally */
+      padding: 20px; /* Add padding for spacing */
+    }
+
+    sl-card {
+      width: 100%; /* Make the card responsive */
+      max-width: 600px; /* Set maximum width for responsiveness */
+    }
+    `
   ]
 
   render() {

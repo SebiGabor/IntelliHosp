@@ -1,5 +1,9 @@
 :root {
   --font-family: sans-serif;
+  --ih-primary-color-1: #112D4E;
+  --ih-primary-color-2: #3F72AF;
+  --ih-primary-color-3: #DBE2EF;
+  --ih-primary-color-4: #F9F7F7;
 }
 
 html, body {

@@ -1,7 +1,7 @@
 import { html } from 'lit';
 
 if (!(globalThis as any).URLPattern) {
-  await import("urlpattern-polyfill");
+  import("urlpattern-polyfill");
 }
 
 import { Router } from '@thepassle/app-tools/router.js';
@@ -15,29 +15,49 @@ export const router = new Router({
   routes: [
     {
       path: resolveRouterPath(),
-      title: 'Home',
+      title: 'Acasă',
       render: () => html`<app-home></app-home>`
     },
     {
       path: resolveRouterPath('about'),
-      title: 'About',
+      title: 'Despre',
       plugins: [
-        lazy(() => import('./pages/app-about/app-about.js')),
+        lazy(() => import('./pages/app-about.js')),
       ],
       render: () => html`<app-about></app-about>`
+    },
+    {
+      path: resolveRouterPath('registerHospital'),
+      title: 'Înregistrare spital',
+      plugins: [
+        lazy(() => import('./pages/register-hospital.js')),
+      ],
+      render: () => html`<register-hospital></register-hospital>`
+    },
+    {
+      path: resolveRouterPath('hospRegisterSuccess'),
+      title: 'Spital înregistrat cu succes',
+      plugins: [
+        lazy(() => import('./pages/hosp-register-success.js')),
+      ],
+      render: () => html`<hosp-register-success></hosp-register-success>`
+    },
+    {
+      path: resolveRouterPath('admin-home'),
+      title: 'Admin Home',
+      plugins: [
+        lazy(() => import('./pages/admin-home.js')),
+      ],
+      render: () => html`<admin-home></admin-home>`
     }
   ]
 }) ?? new Router();
 
-  // This function will resolve a path with whatever Base URL was passed to the vite build process.
-  // Use of this function throughout the starter is not required, but highly recommended, especially if you plan to use GitHub Pages to deploy.
-  // If no arg is passed to this function, it will return the base URL.
-
-  export function resolveRouterPath(unresolvedPath?: string) {
-    var resolvedPath = baseURL;
-    if(unresolvedPath) {
-      resolvedPath = resolvedPath + unresolvedPath;
-    }
-
-    return resolvedPath;
+export function resolveRouterPath(unresolvedPath?: string) {
+  var resolvedPath = baseURL;
+  if(unresolvedPath) {
+    resolvedPath = resolvedPath + unresolvedPath;
   }
+
+  return resolvedPath;
+}
