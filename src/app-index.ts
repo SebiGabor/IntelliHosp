@@ -7,7 +7,7 @@ import './styles/global.css';
 import { router } from './router';
 
 @customElement('app-index')
-export class AppIndex extends LitElement {
+export default class AppIndex extends LitElement {
   static styles = css`
     main {
       padding-left: 16px;

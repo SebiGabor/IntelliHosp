@@ -47,6 +47,13 @@
           console.error(`Service worker registration failed: ${error}`);
         },
       );
+
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (this.refreshing) return;
+        this.refreshing = true;
+        window.location.reload();
+      });
+
     } else {
       console.error("Service workers are not supported.");
     }
