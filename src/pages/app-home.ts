@@ -25,7 +25,7 @@ export class AppHome extends LitElement {
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      align-items: center; /* Center the form horizontally */
+      align-items: center;
     }
 
     #loginCard {
@@ -50,9 +50,7 @@ export class AppHome extends LitElement {
       #loginForm {
         max-width: 90%;
       }
-    }
-
-    `
+    }`
   ];
 
   async firstUpdated() {

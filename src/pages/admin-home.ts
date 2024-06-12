@@ -1,51 +1,65 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import { styles as sharedStyles } from '../styles/shared-styles';
+import { customElement } from 'lit/decorators.js';
+import { resolveRouterPath } from '../router';
+
 import '@shoelace-style/shoelace/dist/components/card/card.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
 
 @customElement('admin-home')
 export class AdminHome extends LitElement {
-  @property({ type: String }) hospitalName = localStorage.getItem('hospitalName') || 'IntelliHosp';
 
-  static styles = [
-    sharedStyles,
-    css`
-      :host {
+  static styles = css`
+    :host {
         display: block;
-        margin: auto; /* Center the component horizontally */
-        max-width: 800px; /* Set maximum width for responsiveness */
-      }
+        margin: auto;
+        max-width: 800px;
+        padding-top: 40px; /* Adjust as needed to move the card higher */
+    }
 
-      main {
+    main {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - (headerHeight + 32px));
+    }
+
+    #adminCard {
+        max-width: 600px;
+        padding: 18px;
         display: flex;
         flex-direction: column;
-        align-items: center; /* Center its children horizontally */
-        padding: 20px; /* Add padding for spacing */
-      }
+        align-items: center;
+    }
 
-      sl-card {
-        width: 100%; /* Make the card responsive */
-        max-width: 600px; /* Set maximum width for responsiveness */
-      }
+    sl-button {
+        margin: 16px 0;
+        width: 100%;
+        max-width: 400px;
+    }
 
-      .welcome-message {
-        font-size: 1.5rem;
-        margin-bottom: 20px;
-      }
+    sl-button:first-child {
+        margin-top: 0;
+    }
 
-      .info-text {
-        margin-bottom: 10px;
-      }
-    `
-  ];
+    sl-button:last-child {
+        margin-bottom: 0;
+    }
+`;
+
+
+
 
   render() {
     return html`
       <app-header ?enableLogOut="${true}"></app-header>
+
       <main>
-        <h1>Admin Home Page</h1>
-        <p>Welcome to the admin home page!</p>0
-        <h2>Hospital: ${this.hospitalName}</h2>
+        <sl-card id="adminCard">
+          <div class="card-body">
+            <sl-button variant="primary" href="${resolveRouterPath('admin-personnel')}">Personal spital</sl-button>
+            <sl-button variant="primary" href="${resolveRouterPath('admin-care-plan')}">Plan de îngrijiri</sl-button>
+          </div>
+        </sl-card>
       </main>
     `;
   }

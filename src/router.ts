@@ -49,6 +49,22 @@ export const router = new Router({
         lazy(() => import('./pages/admin-home.js')),
       ],
       render: () => html`<admin-home></admin-home>`
+    },
+    {
+      path: resolveRouterPath('admin-personnel'),
+      title: 'Personal',
+      plugins: [
+        lazy(() => import('./pages/admin-personnel.js')),
+      ],
+      render: () => html`<admin-personnel></admin-personnel>`
+    },
+    {
+      path: resolveRouterPath('admin-care-plan'),
+      title: 'Plan de îngrijiri',
+      plugins: [
+        lazy(() => import('./pages/admin-care-plan.js')),
+      ],
+      render: () => html`<admin-care-plan></admin-care-plan>`
     }
   ]
 }) ?? new Router();
