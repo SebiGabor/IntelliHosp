@@ -29,15 +29,18 @@ export class AppHeader extends LitElement {
 
     .title-container {
       display: flex;
-      justify-content: center;
       align-items: center;
-      overflow: hidden;
+      flex: 1;
       padding: 8px;
+    }
+
+    .back-button {
+      margin-right: 8px;
     }
 
     .log-out-container {
       justify-self: end;
-      padding-top: 8px; /* Add space from the top */
+      padding-top: 8px;
     }
 
     h1 {
@@ -46,7 +49,7 @@ export class AppHeader extends LitElement {
       font-weight: bold;
       text-align: center;
       word-wrap: break-word;
-      white-space: normal; /* Allows text to wrap */
+      white-space: normal;
     }
 
     @media (max-width: 600px) {
@@ -66,7 +69,7 @@ export class AppHeader extends LitElement {
       }
 
       .log-out-container {
-        padding-top: 4px; /* Adjust space for smaller screens */
+        padding-top: 4px;
       }
     }
   `;
@@ -74,12 +77,10 @@ export class AppHeader extends LitElement {
   render() {
     return html`
       <header>
-        <div>
-          ${this.enableBack ? html`
-            <sl-button href="${resolveRouterPath()}">Înapoi</sl-button>
-          ` : ''}
-        </div>
         <div class="title-container">
+          ${this.enableBack ? html`
+            <sl-button class="back-button" href="${resolveRouterPath()}">Înapoi</sl-button>
+          ` : ''}
           <h1>${this.title}</h1>
         </div>
         <div class="log-out-container">
