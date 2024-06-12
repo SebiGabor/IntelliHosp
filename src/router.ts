@@ -44,7 +44,7 @@ export const router = new Router({
     },
     {
       path: resolveRouterPath('admin-home'),
-      title: 'Admin Home',
+      title: 'Admin',
       plugins: [
         lazy(() => import('./pages/admin-home.js')),
       ],
@@ -57,6 +57,9 @@ export function resolveRouterPath(unresolvedPath?: string) {
   var resolvedPath = baseURL;
   if(unresolvedPath) {
     resolvedPath = resolvedPath + unresolvedPath;
+  }
+  else {
+    localStorage.setItem('hospitalName', "IntelliHosp");
   }
 
   return resolvedPath;

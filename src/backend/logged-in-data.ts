@@ -2,7 +2,7 @@ class DataStore {
     hospitalNameLogin: string;
 
     constructor() {
-      this.hospitalNameLogin = "";
+      this.hospitalNameLogin = "IntelliHosp";
     }
 
     setHospitalName(name) {

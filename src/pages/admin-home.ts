@@ -5,7 +5,7 @@ import '@shoelace-style/shoelace/dist/components/card/card.js';
 
 @customElement('admin-home')
 export class AdminHome extends LitElement {
-  @property({ type: String }) hospitalName = 'Spital';
+  @property({ type: String }) hospitalName = localStorage.getItem('hospitalName') || 'IntelliHosp';
 
   static styles = [
     sharedStyles,
@@ -40,14 +40,12 @@ export class AdminHome extends LitElement {
   ];
 
   render() {
-    const hospitalName = localStorage.getItem('hospitalName') || 'Unknown Hospital';
-    alert(hospitalName);
     return html`
-      <app-header></app-header>
+      <app-header ?enableLogOut="${true}"></app-header>
       <main>
         <h1>Admin Home Page</h1>
         <p>Welcome to the admin home page!</p>0
-        <h2>Hospital: ${hospitalName}</h2>
+        <h2>Hospital: ${this.hospitalName}</h2>
       </main>
     `;
   }
