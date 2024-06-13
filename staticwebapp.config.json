@@ -7,6 +7,10 @@
         {
             "route": "/admin-login",
             "allowedRoles": ["anonymous"]
+        },
+        {
+            "route": "/get-personnel",
+            "allowedRoles": ["anonymous"]
         }
     ],
     "globalHeaders": {

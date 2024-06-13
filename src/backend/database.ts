@@ -108,11 +108,7 @@ app.post('/add-hospital', async (req, res) => {
 });
 
 app.post('/admin-login', async (req, res) => {
-  console.log('Request body:', req.body);
   const { username, password } = req.body;
-
-  console.log('username:', username);
-  console.log('password:', password);
 
   if (!username || !password) {
     res.status(400).json({ error: "Username and password are required" });
@@ -121,7 +117,7 @@ app.post('/admin-login', async (req, res) => {
 
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT "Nume", "AdminPassword" FROM public.ih_hospitals WHERE "AdminUsername" = $1', [username]);
+    const result = await client.query('SELECT "ID", "Nume", "AdminPassword" FROM public.ih_hospitals WHERE "AdminUsername" = $1', [username]);
     client.release();
 
     if (result.rows.length === 0) {
@@ -138,15 +134,31 @@ app.post('/admin-login', async (req, res) => {
     }
 
     loggedInData.setHospitalName(hospital.Nume);
+    loggedInData.setHospitalID(hospital.ID);
 
     res.status(200).json({ hospitalName: hospital.Nume });
     return;
   } catch (err: any) {
-    console.error("Error executing query:", err.message, err.stack);
-    res.status(500).json({ error: "Internal error", details: err.message });
+    console.error("Error executing query:", (err as Error).message, (err as Error).stack);
+    res.status(500).json({ error: "Internal error", details: (err as Error).message });
     return;
   }
 });
+
+app.get('/get-personnel', async (_req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT "Calificare", "Nume", "Prenume", "Email" FROM public.ih_personnel WHERE "IDspital" = $1', [loggedInData.getHospitalID()]);
+    client.release();
+    res.status(200).json(result.rows);
+    return;
+  } catch (err: any) {
+    console.error('Error fetching personnel data:', err.message);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    return;
+  }
+});
+
 
 app.post('/logout', (req, res) => {
   req.session.destroy(err => {
