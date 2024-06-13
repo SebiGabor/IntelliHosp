@@ -3,6 +3,10 @@
         {
             "route": "/add-hospital",
             "allowedRoles": ["anonymous"]
+        },
+        {
+            "route": "/admin-login",
+            "allowedRoles": ["anonymous"]
         }
     ],
     "globalHeaders": {

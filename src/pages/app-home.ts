@@ -96,8 +96,7 @@ export class AppHome extends LitElement {
     event.preventDefault();
 
     try {
-      const response = await fetch('/admin-login', { // Updated URL
-        // Updated URL
+      const response = await fetch('http://localhost:3000/admin-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -108,13 +107,15 @@ export class AppHome extends LitElement {
         })
       });
 
+      console.log('response', response);
+
       if (!response.ok) {
         if (response.body) {
           const errorData = await response.json();
           if (errorData.error === "Username not found") {
             alert("Username-ul nu a fost găsit!");
           } else if (errorData.error === "Incorrect password") {
-            alert("Parolă incorrectă!");
+            alert("Parolă incorectă!");
           } else {
             alert(`Login failed: ${errorData.error}`);
           }

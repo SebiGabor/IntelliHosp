@@ -1,6 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
-import { resolveRouterPath } from '../router';
+import { router, resolveRouterPath } from '../router';
 
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 
@@ -74,18 +74,33 @@ export class AppHeader extends LitElement {
     }
   `;
 
+  logout() {
+    localStorage.clear();
+    sessionStorage.clear();
+
+    fetch('/logout', { method: 'POST' })
+      .then(() => {
+        router.navigate(resolveRouterPath());
+        history.pushState(null, document.title, location.href);
+        window.addEventListener('popstate', function () {
+          history.pushState(null, document.title, location.href);
+        });
+      })
+      .catch(err => console.error('Logout failed', err));
+  }
+
   render() {
     return html`
       <header>
         <div class="title-container">
           ${this.enableBack ? html`
-            <sl-button class="back-button" href="${resolveRouterPath()}">Înapoi</sl-button>
+            <sl-button href="${resolveRouterPath()}">Înapoi</sl-button>
           ` : ''}
           <h1>${this.title}</h1>
         </div>
         <div class="log-out-container">
           ${this.enableLogOut ? html`
-            <sl-button href="${resolveRouterPath()}">Delogare</sl-button>
+            <sl-button @click="${this.logout}">Delogare</sl-button>
           ` : ''}
         </div>
       </header>

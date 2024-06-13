@@ -1,6 +1,6 @@
 [
   {
-    "applyTo": "add-hospital",
+    "applyTo": ["add-hospital", "admin-login"],
     "headers": [
       {
         "name": "allow",
