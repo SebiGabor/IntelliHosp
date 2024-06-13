@@ -65,7 +65,15 @@ export const router = new Router({
         lazy(() => import('./pages/admin-care-plan.js')),
       ],
       render: () => html`<admin-care-plan></admin-care-plan>`
-    }
+    },
+    {
+      path: resolveRouterPath('admin-add-personnel'),
+      title: 'Adaugă personal',
+      plugins: [
+        lazy(() => import('./pages/admin-add-personnel.js')),
+      ],
+      render: () => html`<admin-add-personnel></admin-add-personnel>`
+    },
   ]
 }) ?? new Router();
 

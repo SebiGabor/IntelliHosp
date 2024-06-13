@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { resolveRouterPath } from '../router';
 
 import { styles } from '../styles/information-styles';
 import { styles as sharedStyles } from '../styles/shared-styles';
@@ -23,6 +24,15 @@ export class AdminPersonnel extends LitElement {
         flex-direction: column;
         align-items: center; /* Center its children horizontally */
         padding: 20px; /* Add padding for spacing */
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 600px;
+        margin-bottom: 20px;
       }
 
       sl-card {
@@ -77,7 +87,10 @@ export class AdminPersonnel extends LitElement {
       <app-header ?enableBack="${true}"></app-header>
 
       <main>
-        <h2>Personal spital</h2>
+        <div class="header">
+          <h2>Personal spital</h2>
+          <sl-button href="${resolveRouterPath('admin-add-personnel')}" variant="primary">Înregistrează personal nou</sl-button>
+        </div>
 
         <sl-card>
           ${this.personnel.length > 0 ? html`
