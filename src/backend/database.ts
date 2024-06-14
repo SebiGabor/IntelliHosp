@@ -169,9 +169,11 @@ app.post('/admin-add-personnel', async (req, res) => {
 
   try {
     const client = await pool.connect();
-    let username = prenume + '.' + nume + '_' + loggedInData.getHospitalID();
-    let counter = 1;
+    const extractedNume = nume.split(/[ \-]/)[0].toLowerCase();
+    const extractedPrenume = prenume.split(/[ \-]/)[0].toLowerCase();
 
+    let username = `${extractedPrenume}.${extractedNume}_${loggedInData.getHospitalID()}`;
+    let counter = 1;
 
     while (true) {
       const usernameCheckQuery = 'SELECT COUNT(*) FROM public.ih_personnel WHERE "Username" = $1';
@@ -181,7 +183,7 @@ app.post('/admin-add-personnel', async (req, res) => {
         break;
       }
 
-      username = `${prenume}.${nume}${counter}_${loggedInData.getHospitalID()}`;
+      username = `${extractedPrenume}.${extractedNume}${counter}_${loggedInData.getHospitalID()}`;
       counter++;
     }
 
