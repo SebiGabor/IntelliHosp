@@ -159,6 +159,63 @@ app.get('/get-personnel', async (_req, res) => {
   }
 });
 
+app.post('/admin-add-personnel', async (req, res) => {
+  const { calificare, nume, prenume, email } = req.body;
+
+  if (!calificare || !nume || !prenume || !email) {
+    res.status(400).json({ error: "All fields are required" });
+    return;
+  }
+
+  try {
+    const client = await pool.connect();
+    let username = prenume + '.' + nume + '_' + loggedInData.getHospitalID();
+    let counter = 1;
+
+
+    while (true) {
+      const usernameCheckQuery = 'SELECT COUNT(*) FROM public.ih_personnel WHERE "Username" = $1';
+      const { rows } = await client.query(usernameCheckQuery, [username]);
+
+      if (parseInt(rows[0].count) === 0) {
+        break;
+      }
+
+      username = `${prenume}.${nume}${counter}_${loggedInData.getHospitalID()}`;
+      counter++;
+    }
+
+    const password = generator.generate({
+      length: 12,
+      numbers: true
+    });
+
+    const insertQuery = 'INSERT INTO public.ih_personnel ("IDspital", "Calificare", "Prenume", "Nume", "Username", "Email", "Parola") VALUES ($1, $2, $3, $4, $5, $6, $7)';
+    const result = await client.query(insertQuery, [loggedInData.getHospitalID(), calificare, prenume, nume, username, email, password]);
+    client.release();
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Confirmare înregistrare în IntelliHosp',
+      text: `Bine ați venit în aplicația IntelliHosp!\n\n Ați fost adăugat în aplicația IntelliHosp ca făcând parte din ${loggedInData.getHospitalName()}\n\n Credențialele dumneavoastră de logare pentru sunt:\nUsername: ${username}\nParolă: ${password}\n\nVă mulțumim pentru alegerea făcută!`,
+    };
+
+    transporter.sendMail(mailOptions, (error: any, info: { response: string; }) => {
+      if (error) {
+        console.error(error);
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
+    });
+
+    res.status(201).json(result.rows[0]);
+  } catch (err: any) {
+    console.error("Error executing query: ", err.message, err.stack);
+    res.status(500).json({ error: "Internal error", details: err.message });
+  }
+});
+
 
 app.post('/logout', (req, res) => {
   req.session.destroy(err => {

@@ -10,6 +10,7 @@ export default defineConfig({
       '/add-hospital': 'http://localhost:3000',
       '/admin-login': 'http://localhost:3000',
       '/get-personnel': 'http://localhost:3000',
+      '/admin-add-personnel': 'http://localhost:3000',
     },
   },
   preview: {
@@ -18,6 +19,7 @@ export default defineConfig({
       '/add-hospital': 'http://localhost:3000',
       '/admin-login': 'http://localhost:3000',
       '/get-personnel': 'http://localhost:3000',
+      '/admin-add-personnel': 'http://localhost:3000',
     },
   },
   build: {

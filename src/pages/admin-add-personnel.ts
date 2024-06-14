@@ -1,10 +1,13 @@
 import { LitElement, html, css } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import { router, resolveRouterPath } from '../router';
 
 import { styles } from '../styles/information-styles';
 import { styles as sharedStyles } from '../styles/shared-styles';
 
 import '@shoelace-style/shoelace/dist/components/card/card.js';
+import '@shoelace-style/shoelace/dist/components/input/input.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
 
 @customElement('admin-add-personnel')
 export class AdminAddPersonnel extends LitElement {
@@ -25,33 +28,32 @@ export class AdminAddPersonnel extends LitElement {
         padding: 20px; /* Add padding for spacing */
       }
 
-      .header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        max-width: 600px;
-        margin-bottom: 20px;
-      }
-
       sl-card {
         width: 100%; /* Make the card responsive */
         max-width: 600px; /* Set maximum width for responsiveness */
       }
 
-      table {
+      form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      sl-input,
+      sl-button {
+        margin-bottom: 16px;
         width: 100%;
-        border-collapse: collapse;
       }
 
-      th, td {
-        padding: 10px;
-        border: 1px solid #ddd;
-        text-align: left;
+      h2 {
+        display: inline-block;
+        margin-bottom: 16px;
       }
 
-      th {
-        background-color: #f4f4f4;
+      @media (max-width: 768px) {
+        form {
+          max-width: 90%;
+        }
       }
     `
   ];
@@ -64,9 +66,49 @@ export class AdminAddPersonnel extends LitElement {
         <h2>Adaugă personal spital</h2>
 
         <sl-card>
-
+          <form @submit=${this.handleSubmit}>
+            <sl-input label="Calificare" name="calificare" required></sl-input>
+            <sl-input label="Prenume" name="prenume" required></sl-input>
+            <sl-input label="Nume" name="nume" required></sl-input>
+            <sl-input label="Email" name="email" type="email" required></sl-input>
+            <sl-button variant="primary" type="submit">Adaugă personal</sl-button>
+          </form>
         </sl-card>
       </main>
     `;
+  }
+
+async handleSubmit(event: Event) {
+    event.preventDefault();
+
+    try {
+        const formData = new FormData(event.target as HTMLFormElement);
+        const formDataObject = Object.fromEntries(formData.entries());
+
+        const response = await fetch('/admin-add-personnel', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            calificare: formDataObject.calificare,
+            nume: formDataObject.nume,
+            prenume: formDataObject.prenume,
+            email: formDataObject.email
+          })
+        });
+
+        if (!response.ok) {
+          alert('Eroare la adăugarea personalului');
+          return;
+        }
+
+        alert('Personal adăugat cu succes');
+
+        router.navigate(resolveRouterPath('admin-personnel'));
+
+      } catch (error) {
+        console.error('Error during login:', error);
+      }
   }
 }

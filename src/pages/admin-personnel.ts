@@ -52,7 +52,7 @@ export class AdminPersonnel extends LitElement {
       }
 
       th {
-        background-color: #f4f4f4;
+        background-color: #3F72AF;
       }
     `
   ];
@@ -97,8 +97,9 @@ export class AdminPersonnel extends LitElement {
             <table>
               <thead>
                 <tr>
+                  <th>Calificare</th>
                   <th>Nume</th>
-                  <th>Rol</th>
+                  <th>Prenume</th>
                   <th>Email</th>
                 </tr>
               </thead>

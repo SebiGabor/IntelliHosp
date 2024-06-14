@@ -128,10 +128,8 @@ export class AppHome extends LitElement {
       const data = await response.json();
       const hospitalName = data.hospitalName;
 
-      // Store the hospital name in local storage
       localStorage.setItem('hospitalName', hospitalName);
 
-      // Redirect to admin home page
       router.navigate(resolveRouterPath('admin-home'));
 
     } catch (error) {

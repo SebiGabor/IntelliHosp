@@ -11,6 +11,10 @@
         {
             "route": "/get-personnel",
             "allowedRoles": ["anonymous"]
+        },
+        {
+            "route": "/admin-add-personnel",
+            "allowedRoles": ["admin"]
         }
     ],
     "globalHeaders": {
