@@ -31,19 +31,21 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
-      strategies: "injectManifest",
-      injectManifest: {
-        globDirectory: 'dist',
-        globPatterns: [
-          '**/*.{html,js,css,json, png}',
+      strategies: 'generateSW',
+      workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        sourcemap: false,
+        runtimeCaching: [
+          {
+            urlPattern: new RegExp('^http://localhost:3000/'),
+            handler: 'StaleWhileRevalidate',
+          },
         ],
       },
-      injectRegister: "auto",
-      manifest: false,
-      devOptions: {
-        enabled: true
-      }
+      injectRegister: 'auto',
     }),
-    reactRefresh()
-  ]
-})
+    reactRefresh(),
+  ],
+});
