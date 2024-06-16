@@ -218,6 +218,26 @@ app.post('/admin-add-personnel', async (req, res) => {
   }
 });
 
+app.post('/api/save-config', async (req, res) => {
+  const { textAreas } = req.body;
+  try {
+    await pool.query('INSERT INTO configurations (text_areas) VALUES ($1)', [textAreas]);
+    res.sendStatus(200);
+  } catch (err) {
+    res.sendStatus(500);
+  }
+});
+
+app.post('/api/fetch-config', async (_req, res) => {
+  try {
+    const result = await pool.query('SELECT text_areas FROM configurations ORDER BY id DESC LIMIT 1');
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.sendStatus(500);
+  }
+});
+
+
 
 app.post('/logout', (req, res) => {
   req.session.destroy(err => {

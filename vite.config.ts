@@ -11,6 +11,8 @@ export default defineConfig({
       '/admin-login': 'http://localhost:3000',
       '/get-personnel': 'http://localhost:3000',
       '/admin-add-personnel': 'http://localhost:3000',
+      '/save-config': 'http://localhost:3000',
+      '/fetch-config': 'http://localhost:3000',
     },
   },
   preview: {
@@ -20,6 +22,8 @@ export default defineConfig({
       '/admin-login': 'http://localhost:3000',
       '/get-personnel': 'http://localhost:3000',
       '/admin-add-personnel': 'http://localhost:3000',
+      '/save-config': 'http://localhost:3000',
+      '/fetch-config': 'http://localhost:3000',
     },
   },
   build: {
