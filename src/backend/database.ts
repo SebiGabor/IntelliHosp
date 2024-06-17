@@ -7,11 +7,14 @@ import pkg from 'pg';
 import generator from 'generate-password';
 import nodemailer from 'nodemailer';
 import loggedInData from './logged-in-data.js';
+import fs from 'fs';
+import multer from 'multer';
 
 dotenv.config();
 
 const app = express();
 const { Pool } = pkg;
+const upload = multer({ dest: 'uploads/' });
 
 const allowedOrigins = ['http://localhost:5173', 'https://white-grass-078bf751e.5.azurestaticapps.net'];
 
@@ -42,6 +45,7 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(session({
   secret: 'your-secret-key',
@@ -218,24 +222,61 @@ app.post('/admin-add-personnel', async (req, res) => {
   }
 });
 
-app.post('/api/save-config', async (req, res) => {
-  const { textAreas } = req.body;
+app.post('/save-config', upload.single('pdfFile'), async (req, res) => {
+  let textAreas = [];
+  if (req.body.textAreas) {
+    try {
+      const parsedData = JSON.parse(req.body.textAreas);
+      textAreas = parsedData.textAreas || []; // Ensure to default to an empty array if textAreas is undefined
+    } catch (error) {
+      console.error('Error parsing textAreas JSON:', error);
+      return res.status(400).send('Invalid JSON for textAreas');
+    }
+  }
+
+  const filePath = (req as any).file.path; // Path of uploaded PDF file
+
   try {
-    await pool.query('INSERT INTO configurations (text_areas) VALUES ($1)', [textAreas]);
+    // Read file content
+    const pdfContent = fs.readFileSync(filePath);
+
+    // Insert text areas and PDF content into database
+    const query = 'UPDATE public.ih_hospitals SET "PDF" = $1, "TextArea" = $2 WHERE "ID" = $3';
+    await pool.query(query, [pdfContent, JSON.stringify(textAreas), loggedInData.getHospitalID()]);
+
+    // Respond with success
     res.sendStatus(200);
+    return;
   } catch (err) {
+    console.error('Error saving configuration:', err);
+    res.sendStatus(500);
+    return;
+  } finally {
+    // Delete the temporary file after reading its content
+    fs.unlinkSync(filePath);
+    return;
+  }
+});
+
+
+app.post('/fetch-config', async (_req, res) => {
+  try {
+    const query = 'SELECT encode("PDF", \'base64\') as pdf_content, "TextArea" FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
+    const result = await pool.query(query, [loggedInData.getHospitalID()]);
+
+    if (result.rows.length > 0) {
+      const { pdf_content, TextArea } = result.rows[0];
+      res.json({ pdf_content, text_areas: TextArea });
+    } else {
+      res.status(404).json({ error: 'Configuration not found' });
+    }
+  } catch (err) {
+    console.error('Error fetching configuration:', err);
     res.sendStatus(500);
   }
 });
 
-app.post('/api/fetch-config', async (_req, res) => {
-  try {
-    const result = await pool.query('SELECT text_areas FROM configurations ORDER BY id DESC LIMIT 1');
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.sendStatus(500);
-  }
-});
+
 
 
 

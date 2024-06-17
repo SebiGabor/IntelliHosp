@@ -74,6 +74,14 @@ export const router = new Router({
       ],
       render: () => html`<admin-add-personnel></admin-add-personnel>`
     },
+    {
+      path: resolveRouterPath('personnel-complete-plan'),
+      title: 'Completează planul',
+      plugins: [
+        lazy(() => import('./pages/personnel-complete-plan.js')),
+      ],
+      render: () => html`<personnel-complete-plan></personnel-complete-plan>`
+    },
   ]
 }) ?? new Router();
 
