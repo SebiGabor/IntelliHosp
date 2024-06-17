@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { PDFDocument, rgb } from 'pdf-lib';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 
@@ -80,30 +81,71 @@ export class PersonnelCompletePlan extends LitElement {
         method: 'POST',
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch configuration');
+        throw new Error('Eroare la preluarea configurării');
       }
       const config = await response.json();
 
-      // Handle Base64 PDF content
       this.pdfBlobUrl = config.pdf_content ? `data:application/pdf;base64,${config.pdf_content}` : null;
 
-      // Ensure config.text_areas is an array before assigning
       if (Array.isArray(config.text_areas)) {
         this.textAreas = config.text_areas;
         this.textValues = Array(config.text_areas.length).fill('');
       } else {
-        console.error('Invalid text areas data:', config.text_areas);
-        // Handle this case accordingly, e.g., show error message
+        console.error('Date invalide pentru zonele de text:', config.text_areas);
       }
     } catch (err) {
-      console.error('Error fetching configuration:', err);
-      // Handle error appropriately (e.g., show error message)
+      console.error('Eroare la preluarea configurării:', err);
     }
   }
 
   saveCompletedPdf() {
-    // Implement saving the completed PDF if needed
-    console.log('Saving completed PDF');
+    if (!this.pdfBlobUrl) {
+      console.error('Nu există PDF disponibil pentru a fi salvat completat.');
+      return;
+    }
+
+    try {
+      fetch(this.pdfBlobUrl)
+        .then(res => res.arrayBuffer())
+        .then(async data => {
+
+          const existingPdfBytes = new Uint8Array(data);
+          const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+          const firstPage = pdfDoc.getPages()[0];
+
+          this.textAreas.forEach((area, index) => {
+            const textValue = this.textValues[index];
+            const fontSize = 14;
+            const { x, y, height } = area;
+
+            firstPage.drawText(textValue, {
+              x,
+              y: firstPage.getHeight() - y - height + fontSize / 2,
+              size: fontSize,
+              color: rgb(0, 0, 0),
+            });
+          });
+
+          const pdfBytes = await pdfDoc.save();
+
+          const file = new Blob([pdfBytes], { type: 'application/pdf' });
+
+          const fileURL = URL.createObjectURL(file);
+
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = fileURL;
+          a.download = 'plan_ingrijiri.pdf';
+          document.body.appendChild(a);
+          a.click();
+
+          URL.revokeObjectURL(fileURL);
+          document.body.removeChild(a);
+        });
+    } catch (error) {
+      console.error('Eroare la salvarea PDF completat:', error);
+    }
   }
 
   handleTextAreaInput(index: number, event: Event) {
@@ -113,7 +155,7 @@ export class PersonnelCompletePlan extends LitElement {
   render() {
     return html`
       <main>
-        <h2>Fill in Text Boxes and View PDF</h2>
+        <h2>Completați Casetele de Text și Vizualizați PDF-ul</h2>
         <sl-card>
           ${this.pdfBlobUrl
             ? html`
@@ -137,10 +179,9 @@ export class PersonnelCompletePlan extends LitElement {
                   )}
                 </div>
               `
-            : html`<p>No PDF available.</p>`}
+            : html`<p>Nu există PDF disponibil.</p>`}
         </sl-card>
-        <!-- Optional: Button to save completed PDF -->
-        <sl-button @click="${this.saveCompletedPdf}">Save Completed PDF</sl-button>
+        <sl-button @click="${this.saveCompletedPdf}">Salvați PDF-ul Completat</sl-button>
       </main>
     `;
   }

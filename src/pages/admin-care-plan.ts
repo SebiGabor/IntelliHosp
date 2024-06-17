@@ -76,7 +76,7 @@ export class AdminCarePlan extends LitElement {
 
   async saveConfiguration() {
     if (!this.pdfFile) {
-      alert('Please upload a PDF file.');
+      alert('Vă rugăm să încărcați un fișier PDF.');
       return;
     }
 
@@ -91,13 +91,12 @@ export class AdminCarePlan extends LitElement {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save configuration');
+        throw new Error('Salvarea configurării a eșuat');
       }
 
-      alert('Configuration saved!');
+      alert('Configurația a fost salvată!');
     } catch (error) {
-      console.error('Error saving configuration:', error);
-      // Handle error as needed
+      console.error('Eroare la salvarea configurației:', error);
     }
   }
 
@@ -190,11 +189,11 @@ export class AdminCarePlan extends LitElement {
   render() {
     return html`
       <main>
-        <h2>Configure PDF Text Boxes</h2>
+        <h2>Configurați casetele de text PDF</h2>
         <input id="pdfFileInput" type="file" @change="${this.handleFileUpload}" />
-        <sl-button @click="${this.addTextArea}">Add Text Area</sl-button>
-        <sl-button @click="${this.saveConfiguration}">Save Configuration</sl-button>
-        <sl-button @click="${this.navigateToFillPage}">Go to Fill Page</sl-button>
+        <sl-button @click="${this.addTextArea}">Adăugați zonă de text</sl-button>
+        <sl-button @click="${this.saveConfiguration}">Salvați configurația</sl-button>
+        <sl-button @click="${this.navigateToFillPage}">Accesați pagina de completare</sl-button>
         <sl-card>
           ${this.pdfFile
             ? html`
@@ -214,7 +213,7 @@ export class AdminCarePlan extends LitElement {
                   )}
                 </div>
               `
-            : html`<p>Please upload a PDF file.</p>`}
+            : html`<p>Vă rugăm să încărcați un fișier PDF.</p>`}
         </sl-card>
       </main>
     `;
