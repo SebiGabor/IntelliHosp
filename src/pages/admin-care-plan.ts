@@ -10,6 +10,7 @@ import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 export class AdminCarePlan extends LitElement {
   @property({ type: File }) pdfFile: File | null = null;
   @property({ type: Array }) textAreas: any[] = [];
+  @property({ type: String }) pdfBlobUrl: string | null = null;
 
   static styles = css`
     :host {
@@ -65,6 +66,7 @@ export class AdminCarePlan extends LitElement {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.pdfFile = input.files[0];
+      this.pdfBlobUrl = URL.createObjectURL(this.pdfFile);
       this.requestUpdate();
     }
   }
@@ -104,12 +106,35 @@ export class AdminCarePlan extends LitElement {
     router.navigate(resolveRouterPath('personnel-complete-plan'));
   }
 
-  firstUpdated() {
+  async firstUpdated() {
+    await this.fetchConfiguration();
     this.initializeDraggables();
   }
 
   updated() {
     this.initializeDraggables();
+  }
+
+  async fetchConfiguration() {
+    try {
+      const response = await fetch('/fetch-config', {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('Eroare la preluarea configurării');
+      }
+      const config = await response.json();
+
+      this.pdfBlobUrl = config.pdf_content ? `data:application/pdf;base64,${config.pdf_content}` : null;
+
+      if (Array.isArray(config.text_areas)) {
+        this.textAreas = config.text_areas;
+      } else {
+        console.error('Date invalide pentru zonele de text:', config.text_areas);
+      }
+    } catch (err) {
+      console.error('Eroare la preluarea configurării:', err);
+    }
   }
 
   async initializeDraggables() {
@@ -195,10 +220,10 @@ export class AdminCarePlan extends LitElement {
         <sl-button @click="${this.saveConfiguration}">Salvați configurația</sl-button>
         <sl-button @click="${this.navigateToFillPage}">Accesați pagina de completare</sl-button>
         <sl-card>
-          ${this.pdfFile
+          ${this.pdfBlobUrl
             ? html`
                 <div id="pdf-container">
-                  <embed id="pdf-render" src="${URL.createObjectURL(this.pdfFile)}" type="application/pdf" />
+                  <embed id="pdf-render" src="${this.pdfBlobUrl}" type="application/pdf" />
                   ${this.textAreas.map(
                     (area, index) => html`
                       <div
