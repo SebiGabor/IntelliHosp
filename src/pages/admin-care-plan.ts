@@ -77,13 +77,16 @@ export class AdminCarePlan extends LitElement {
   }
 
   async saveConfiguration() {
-    if (!this.pdfFile) {
-      alert('Vă rugăm să încărcați un fișier PDF.');
+    // Check if either pdfFile or pdfBlobUrl is missing
+    if (!this.pdfFile && !this.pdfBlobUrl) {
+      alert('Vă rugăm să încărcați sau să selectați un fișier PDF.');
       return;
     }
 
     const formData = new FormData();
-    formData.append('pdfFile', this.pdfFile);
+    if (this.pdfFile) {
+      formData.append('pdfFile', this.pdfFile);
+    }
     formData.append('textAreas', JSON.stringify({ textAreas: this.textAreas }));
 
     try {

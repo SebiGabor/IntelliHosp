@@ -234,28 +234,38 @@ app.post('/save-config', upload.single('pdfFile'), async (req, res) => {
     }
   }
 
-  const filePath = (req as any).file.path; // Path of uploaded PDF file
+  try{
+    const filePath = (req as any).file.path;
+    try {
+      const pdfContent = fs.readFileSync(filePath);
 
-  try {
-    // Read file content
-    const pdfContent = fs.readFileSync(filePath);
+      const query = 'UPDATE public.ih_hospitals SET "PDF" = $1, "TextArea" = $2 WHERE "ID" = $3';
+      await pool.query(query, [pdfContent, JSON.stringify(textAreas), loggedInData.getHospitalID()]);
 
-    // Insert text areas and PDF content into database
-    const query = 'UPDATE public.ih_hospitals SET "PDF" = $1, "TextArea" = $2 WHERE "ID" = $3';
-    await pool.query(query, [pdfContent, JSON.stringify(textAreas), loggedInData.getHospitalID()]);
+      res.sendStatus(200);
+      return;
+    } catch (err) {
+      console.error('Error saving configuration:', err);
+      res.sendStatus(500);
+      return;
+    } finally {
+      fs.unlinkSync(filePath);
+      return
+    }
+  } catch (err){
+    try {
+      const query = 'UPDATE public.ih_hospitals SET "TextArea" = $1 WHERE "ID" = $2';
+      await pool.query(query, [JSON.stringify(textAreas), loggedInData.getHospitalID()]);
 
-    // Respond with success
-    res.sendStatus(200);
-    return;
-  } catch (err) {
-    console.error('Error saving configuration:', err);
-    res.sendStatus(500);
-    return;
-  } finally {
-    // Delete the temporary file after reading its content
-    fs.unlinkSync(filePath);
-    return;
+      res.sendStatus(200);
+      return;
+    } catch (err) {
+      console.error('Error saving configuration:', err);
+      res.sendStatus(500);
+      return;
+    }
   }
+
 });
 
 
