@@ -8,6 +8,22 @@ export class AdminCarePlan extends LitElement {
   @state() pdfPages: PDFPage[] = [];
   @state() currentPageIndex: number = 0;
   @state() pageDataUrls: string[] = [];
+  @state() isAddingTextField: boolean = false;
+  @state() textFieldX: number = 50;
+  @state() textFieldY: number = 50;
+  @state() textFieldWidth: number = 200;
+  @state() textFieldHeight: number = 20;
+  @state() dragHandleSize: number = 10;
+  @state() activeHandle: string | null = null;
+  @state() initialMouseX: number = 0;
+  @state() initialMouseY: number = 0;
+  @state() initialTextFieldX: number = 0;
+  @state() initialTextFieldY: number = 0;
+  @state() initialTextFieldWidth: number = 0;
+  @state() initialTextFieldHeight: number = 0;
+  @state() isDragging: boolean = false;
+  @state() initialDragX: number = 0;
+  @state() initialDragY: number = 0;
 
   static styles = css`
     input[type="file"] {
@@ -21,6 +37,35 @@ export class AdminCarePlan extends LitElement {
     }
     button {
       margin: 10px;
+    }
+    .text-field {
+      position: absolute;
+      border: 2px dashed #000;
+      background-color: rgba(255, 255, 255, 0.5);
+      cursor: move;
+    }
+    .handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #000;
+      cursor: pointer;
+    }
+    .handle.top-left {
+      top: -5px;
+      left: -5px;
+    }
+    .handle.top-right {
+      top: -5px;
+      right: -5px;
+    }
+    .handle.bottom-left {
+      bottom: -5px;
+      left: -5px;
+    }
+    .handle.bottom-right {
+      bottom: -5px;
+      right: -5px;
     }
   `;
 
@@ -68,18 +113,13 @@ export class AdminCarePlan extends LitElement {
 
     const form = newDocument.getForm();
 
-    const textFieldX = 50;
-    const textFieldY = 50;
-    const textFieldWidth = 200;
-    const textFieldHeight = 20;
-
     const textField = form.createTextField('TextField1');
     textField.setText('Sample text');
     textField.addToPage(copiedPage[0], {
-      x: textFieldX,
-      y: textFieldY,
-      width: textFieldWidth,
-      height: textFieldHeight,
+      x: this.textFieldX,
+      y: this.textFieldY,
+      width: this.textFieldWidth,
+      height: this.textFieldHeight,
       textColor: rgb(0, 0, 0),
       backgroundColor: rgb(1, 1, 1),
       borderColor: rgb(0, 0, 0)
@@ -91,7 +131,112 @@ export class AdminCarePlan extends LitElement {
 
     this.pageDataUrls[this.currentPageIndex] = updatedDataUrl;
 
+    // Enable text field editing
+    this.isAddingTextField = true;
     this.requestUpdate();
+  }
+
+  initializeDraggableTextField(textFieldElement: HTMLElement) {
+    textFieldElement.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.isDragging = true;
+      this.initialDragX = e.clientX - this.textFieldX;
+      this.initialDragY = e.clientY - this.textFieldY;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (this.isDragging) {
+        this.textFieldX = e.clientX - this.initialDragX;
+        this.textFieldY = e.clientY - this.initialDragY;
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      this.isDragging = false;
+    });
+  }
+
+  initializeResizableTextField(textFieldElement: HTMLElement) {
+    const handleTopLeft = document.createElement('div');
+    handleTopLeft.className = 'handle top-left';
+    textFieldElement.appendChild(handleTopLeft);
+
+    const handleTopRight = document.createElement('div');
+    handleTopRight.className = 'handle top-right';
+    textFieldElement.appendChild(handleTopRight);
+
+    const handleBottomLeft = document.createElement('div');
+    handleBottomLeft.className = 'handle bottom-left';
+    textFieldElement.appendChild(handleBottomLeft);
+
+    const handleBottomRight = document.createElement('div');
+    handleBottomRight.className = 'handle bottom-right';
+    textFieldElement.appendChild(handleBottomRight);
+
+    const onMouseDown = (handle: string, e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.activeHandle = handle;
+      this.initialMouseX = e.clientX;
+      this.initialMouseY = e.clientY;
+      this.initialTextFieldX = this.textFieldX;
+      this.initialTextFieldY = this.textFieldY;
+      this.initialTextFieldWidth = this.textFieldWidth;
+      this.initialTextFieldHeight = this.textFieldHeight;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!this.activeHandle) return;
+
+      const deltaX = e.clientX - this.initialMouseX;
+      const deltaY = e.clientY - this.initialMouseY;
+
+      switch (this.activeHandle) {
+        case 'top-left':
+          this.textFieldX = this.initialTextFieldX + deltaX;
+          this.textFieldY = this.initialTextFieldY + deltaY;
+          this.textFieldWidth = this.initialTextFieldWidth - deltaX;
+          this.textFieldHeight = this.initialTextFieldHeight - deltaY;
+          break;
+        case 'top-right':
+          this.textFieldY = this.initialTextFieldY + deltaY;
+          this.textFieldWidth = this.initialTextFieldWidth + deltaX;
+          this.textFieldHeight = this.initialTextFieldHeight - deltaY;
+          break;
+        case 'bottom-left':
+          this.textFieldX = this.initialTextFieldX + deltaX;
+          this.textFieldWidth = this.initialTextFieldWidth - deltaX;
+          this.textFieldHeight = this.initialTextFieldHeight + deltaY;
+          break;
+        case 'bottom-right':
+          this.textFieldWidth = this.initialTextFieldWidth + deltaX;
+          this.textFieldHeight = this.initialTextFieldHeight + deltaY;
+          break;
+      }
+    };
+
+    const onMouseUp = () => {
+      this.activeHandle = null;
+    };
+
+    handleTopLeft.addEventListener('mousedown', onMouseDown.bind(null, 'top-left'));
+    handleTopRight.addEventListener('mousedown', onMouseDown.bind(null, 'top-right'));
+    handleBottomLeft.addEventListener('mousedown', onMouseDown.bind(null, 'bottom-left'));
+    handleBottomRight.addEventListener('mousedown', onMouseDown.bind(null, 'bottom-right'));
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }
+
+  updated(changedProperties: Map<string | number | symbol, unknown>) {
+    if (changedProperties.has('isAddingTextField') && this.isAddingTextField) {
+      const textField = this.shadowRoot?.querySelector('.text-field') as HTMLElement;
+      if (textField) {
+        this.initializeDraggableTextField(textField);
+        this.initializeResizableTextField(textField);
+      }
+    }
   }
 
   render() {
@@ -104,6 +249,15 @@ export class AdminCarePlan extends LitElement {
           <div>
             <div style="position: relative;">
               <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: 100%; height: 600px; position: absolute; top: 0; left: 0;">
+              ${this.isAddingTextField ? html`
+                <div class="text-field" style="left: ${this.textFieldX}px; top: ${this.textFieldY}px; width: ${this.textFieldWidth}px; height: ${this.textFieldHeight}px;">
+                  Sample text field
+                  <div class="handle top-left"></div>
+                  <div class="handle top-right"></div>
+                  <div class="handle bottom-left"></div>
+                  <div class="handle bottom-right"></div>
+                </div>
+              ` : ''}
               <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);">
                 <button @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">Previous Page</button>
                 <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
