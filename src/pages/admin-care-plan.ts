@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { PDFDocument, PDFPage } from 'pdf-lib';
+import { PDFDocument, PDFPage, rgb } from 'pdf-lib';
 
 @customElement('admin-care-plan')
 export class AdminCarePlan extends LitElement {
@@ -56,6 +56,44 @@ export class AdminCarePlan extends LitElement {
     }
   }
 
+  async handleTextFieldAdd() {
+    if (!this.pdfFile || this.currentPageIndex < 0 || this.currentPageIndex >= this.pdfPages.length) return;
+
+    const currentPage = this.pdfPages[this.currentPageIndex];
+    const pdfDoc = currentPage.doc;
+
+    const newDocument = await PDFDocument.create();
+    const copiedPage = await newDocument.copyPages(pdfDoc, [this.currentPageIndex]);
+    newDocument.addPage(copiedPage[0]);
+
+    const form = newDocument.getForm();
+
+    const textFieldX = 50;
+    const textFieldY = 50;
+    const textFieldWidth = 200;
+    const textFieldHeight = 20;
+
+    const textField = form.createTextField('TextField1');
+    textField.setText('Sample text');
+    textField.addToPage(copiedPage[0], {
+      x: textFieldX,
+      y: textFieldY,
+      width: textFieldWidth,
+      height: textFieldHeight,
+      textColor: rgb(0, 0, 0),
+      backgroundColor: rgb(1, 1, 1),
+      borderColor: rgb(0, 0, 0)
+    });
+
+    const pdfBytes = await newDocument.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const updatedDataUrl = URL.createObjectURL(blob);
+
+    this.pageDataUrls[this.currentPageIndex] = updatedDataUrl;
+
+    this.requestUpdate();
+  }
+
   render() {
     const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
 
@@ -69,6 +107,7 @@ export class AdminCarePlan extends LitElement {
               <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);">
                 <button @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">Previous Page</button>
                 <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
+                <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
               </div>
             </div>
           </div>
