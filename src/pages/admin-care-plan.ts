@@ -302,40 +302,48 @@ export class AdminCarePlan extends LitElement {
     }
   }
 
+  handleDeleteTextField(index: number) {
+    if (index >= 0 && index < this.textBoxes.length) {
+      this.textBoxes.splice(index, 1); // Remove the text field at the specified index
+      this.requestUpdate(); // Trigger LitElement to re-render
+    }
+  }
+
   render() {
     const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
 
     return html`
-    <div>
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-        <input type="file" accept="application/pdf" @change="${this.handleFileUpload}" />
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+          <input type="file" accept="application/pdf" @change="${this.handleFileUpload}" />
+          ${this.pageDataUrls.length > 0 ? html`
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <button @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">Previous Page</button>
+              <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
+              <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
+              <button @click="${this.handleConfirmTextField}" class="confirm-button">Confirm</button>
+              <button @click="${this.handleDownloadPdf}">Download PDF with Text Field</button>
+            </div>
+          ` : ''}
+        </div>
         ${this.pageDataUrls.length > 0 ? html`
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <button @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">Previous Page</button>
-            <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
-            <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
-            <button @click="${this.handleConfirmTextField}" class="confirm-button">Confirm</button>
-            <button @click="${this.handleDownloadPdf}">Download PDF with Text Field</button>
+          <div style="display: flex; justify-content: center; position: relative;">
+            <div style="position: relative;">
+              <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: ${600 * this.pdfPages[this.currentPageIndex].getWidth() / this.pdfPages[this.currentPageIndex].getHeight()}px; height: 600px;">
+              ${this.textBoxes.map((box, index) => html`
+                <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
+                  Sample text field
+                  <div class="handle top-left"></div>
+                  <div class="handle top-right"></div>
+                  <div class="handle bottom-left"></div>
+                  <div class="handle bottom-right"></div>
+                  <button @click="${() => this.handleDeleteTextField(index)}">Delete</button>
+                </div>
+              `)}
+            </div>
           </div>
         ` : ''}
       </div>
-      ${this.pageDataUrls.length > 0 ? html`
-        <div style="display: flex; justify-content: center; position: relative;">
-          <div style="position: relative;">
-            <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: ${600 * this.pdfPages[this.currentPageIndex].getWidth() / this.pdfPages[this.currentPageIndex].getHeight()}px; height: 600px;">
-            ${this.textBoxes.map((box) => html`
-              <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
-                Sample text field
-                <div class="handle top-left"></div>
-                <div class="handle top-right"></div>
-                <div class="handle bottom-left"></div>
-                <div class="handle bottom-right"></div>
-              </div>
-            `)}
-          </div>
-        </div>
-      ` : ''}
-    </div>
-  `;
+    `;
   }
 }
