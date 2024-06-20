@@ -229,6 +229,17 @@ export class AdminCarePlan extends LitElement {
     document.addEventListener('mouseup', onMouseUp);
   }
 
+  async handleDownloadPdf() {
+    if (this.pageDataUrls.length === 0) return;
+
+    const pdfBytes = await fetch(this.pageDataUrls[this.currentPageIndex]).then((res) => res.blob());
+
+    const downloadLink = document.createElement('a');
+    downloadLink.href = URL.createObjectURL(pdfBytes);
+    downloadLink.download = 'modified_pdf_with_text_field.pdf';
+    downloadLink.click();
+  }
+
   updated(changedProperties: Map<string | number | symbol, unknown>) {
     if (changedProperties.has('isAddingTextField') && this.isAddingTextField) {
       const textField = this.shadowRoot?.querySelector('.text-field') as HTMLElement;
@@ -262,6 +273,7 @@ export class AdminCarePlan extends LitElement {
                 <button @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">Previous Page</button>
                 <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
                 <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
+                <button @click="${this.handleDownloadPdf}">Download PDF with Text Field</button>
               </div>
             </div>
           </div>
