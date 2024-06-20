@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { PDFDocument, PDFPage, rgb } from 'pdf-lib';
+import { PDFDocument, rgb, PDFPage } from 'pdf-lib';
 
 @customElement('admin-care-plan')
 export class AdminCarePlan extends LitElement {
@@ -24,6 +24,8 @@ export class AdminCarePlan extends LitElement {
   @state() isDragging: boolean = false;
   @state() initialDragX: number = 0;
   @state() initialDragY: number = 0;
+  @state() isConfirmingTextField: boolean = false;
+  @state() textBoxes: Array<{ x: number; y: number; width: number; height: number }> = [];
 
   static styles = css`
     input[type="file"] {
@@ -101,78 +103,89 @@ export class AdminCarePlan extends LitElement {
     }
   }
 
-  async handleTextFieldAdd() {
+  handleTextFieldAdd() {
     if (!this.pdfFile || this.currentPageIndex < 0 || this.currentPageIndex >= this.pdfPages.length) return;
 
-    const currentPage = this.pdfPages[this.currentPageIndex];
-    const pdfDoc = currentPage.doc;
+    // Add a new text field to the list
+    this.textBoxes = [
+      ...this.textBoxes,
+      { x: 50, y: 50, width: 200, height: 20 }
+    ];
 
-    const newDocument = await PDFDocument.create();
-    const copiedPage = await newDocument.copyPages(pdfDoc, [this.currentPageIndex]);
-    newDocument.addPage(copiedPage[0]);
+    this.isAddingTextField = true;
+    this.requestUpdate();
+  }
 
-    const form = newDocument.getForm();
+  handleConfirmTextField = async () => {
+    if (!this.pdfFile || this.currentPageIndex < 0 || this.currentPageIndex >= this.pdfPages.length) return;
 
-    const textField = form.createTextField('TextField1');
-    textField.setText('Sample text');
-    textField.addToPage(copiedPage[0], {
-      x: this.textFieldX,
-      y: this.textFieldY,
-      width: this.textFieldWidth,
-      height: this.textFieldHeight,
-      textColor: rgb(0, 0, 0),
-      backgroundColor: rgb(1, 1, 1),
-      borderColor: rgb(0, 0, 0)
+    // Load the existing PDFDocument from the current page's URL
+    const currentPageUrl = this.pageDataUrls[this.currentPageIndex];
+    const existingPdfBytes = await fetch(currentPageUrl).then((res) => res.arrayBuffer());
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+    const form = pdfDoc.getForm();
+    const page = pdfDoc.getPage(this.currentPageIndex);
+
+    // Create PDFTextField for each text box
+    this.textBoxes.forEach((box, index) => {
+      const pdfTextField = form.createTextField(`TextField${Date.now()}-${index}`);
+      pdfTextField.setText('Sample text');
+      pdfTextField.addToPage(page, {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        textColor: rgb(0, 0, 0),
+        backgroundColor: rgb(1, 1, 1),
+        borderColor: rgb(0, 0, 0)
+      });
     });
 
-    const pdfBytes = await newDocument.save();
+    const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const updatedDataUrl = URL.createObjectURL(blob);
 
     this.pageDataUrls[this.currentPageIndex] = updatedDataUrl;
 
-    // Enable text field editing
-    this.isAddingTextField = true;
+    // Clear text boxes
+    this.textBoxes = [];
+    this.isAddingTextField = false;
     this.requestUpdate();
-  }
+  };
 
-  initializeDraggableTextField(textFieldElement: HTMLElement) {
+  initializeDraggableTextField(textFieldElement: HTMLElement, index: number) {
     textFieldElement.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.isDragging = true;
-      this.initialDragX = e.clientX - this.textFieldX;
-      this.initialDragY = e.clientY - this.textFieldY;
-    });
+      this.initialDragX = e.clientX - this.textBoxes[index].x;
+      this.initialDragY = e.clientY - this.textBoxes[index].y;
 
-    document.addEventListener('mousemove', (e) => {
-      if (this.isDragging) {
-        this.textFieldX = e.clientX - this.initialDragX;
-        this.textFieldY = e.clientY - this.initialDragY;
-      }
-    });
+      const onMouseMove = (e: MouseEvent) => {
+        if (this.isDragging) {
+          this.textBoxes[index].x = e.clientX - this.initialDragX;
+          this.textBoxes[index].y = e.clientY - this.initialDragY;
+          this.requestUpdate();
+        }
+      };
 
-    document.addEventListener('mouseup', () => {
-      this.isDragging = false;
+      const onMouseUp = () => {
+        this.isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
     });
   }
 
-  initializeResizableTextField(textFieldElement: HTMLElement) {
-    const handleTopLeft = document.createElement('div');
-    handleTopLeft.className = 'handle top-left';
-    textFieldElement.appendChild(handleTopLeft);
-
-    const handleTopRight = document.createElement('div');
-    handleTopRight.className = 'handle top-right';
-    textFieldElement.appendChild(handleTopRight);
-
-    const handleBottomLeft = document.createElement('div');
-    handleBottomLeft.className = 'handle bottom-left';
-    textFieldElement.appendChild(handleBottomLeft);
-
-    const handleBottomRight = document.createElement('div');
-    handleBottomRight.className = 'handle bottom-right';
-    textFieldElement.appendChild(handleBottomRight);
+  initializeResizableTextField(textFieldElement: HTMLElement, index: number) {
+    const handleTopLeft = textFieldElement.querySelector('.handle.top-left') as HTMLElement;
+    const handleTopRight = textFieldElement.querySelector('.handle.top-right') as HTMLElement;
+    const handleBottomLeft = textFieldElement.querySelector('.handle.bottom-left') as HTMLElement;
+    const handleBottomRight = textFieldElement.querySelector('.handle.bottom-right') as HTMLElement;
 
     const onMouseDown = (handle: string, e: MouseEvent) => {
       e.preventDefault();
@@ -180,53 +193,57 @@ export class AdminCarePlan extends LitElement {
       this.activeHandle = handle;
       this.initialMouseX = e.clientX;
       this.initialMouseY = e.clientY;
-      this.initialTextFieldX = this.textFieldX;
-      this.initialTextFieldY = this.textFieldY;
-      this.initialTextFieldWidth = this.textFieldWidth;
-      this.initialTextFieldHeight = this.textFieldHeight;
-    };
+      this.initialTextFieldX = this.textBoxes[index].x;
+      this.initialTextFieldY = this.textBoxes[index].y;
+      this.initialTextFieldWidth = this.textBoxes[index].width;
+      this.initialTextFieldHeight = this.textBoxes[index].height;
 
-    const onMouseMove = (e: MouseEvent) => {
-      if (!this.activeHandle) return;
+      const onMouseMove = (e: MouseEvent) => {
+        if (!this.activeHandle) return;
 
-      const deltaX = e.clientX - this.initialMouseX;
-      const deltaY = e.clientY - this.initialMouseY;
+        const deltaX = e.clientX - this.initialMouseX;
+        const deltaY = e.clientY - this.initialMouseY;
 
-      switch (this.activeHandle) {
-        case 'top-left':
-          this.textFieldX = this.initialTextFieldX + deltaX;
-          this.textFieldY = this.initialTextFieldY + deltaY;
-          this.textFieldWidth = this.initialTextFieldWidth - deltaX;
-          this.textFieldHeight = this.initialTextFieldHeight - deltaY;
-          break;
-        case 'top-right':
-          this.textFieldY = this.initialTextFieldY + deltaY;
-          this.textFieldWidth = this.initialTextFieldWidth + deltaX;
-          this.textFieldHeight = this.initialTextFieldHeight - deltaY;
-          break;
-        case 'bottom-left':
-          this.textFieldX = this.initialTextFieldX + deltaX;
-          this.textFieldWidth = this.initialTextFieldWidth - deltaX;
-          this.textFieldHeight = this.initialTextFieldHeight + deltaY;
-          break;
-        case 'bottom-right':
-          this.textFieldWidth = this.initialTextFieldWidth + deltaX;
-          this.textFieldHeight = this.initialTextFieldHeight + deltaY;
-          break;
-      }
-    };
+        switch (this.activeHandle) {
+          case 'top-left':
+            this.textBoxes[index].x = this.initialTextFieldX + deltaX;
+            this.textBoxes[index].y = this.initialTextFieldY + deltaY;
+            this.textBoxes[index].width = this.initialTextFieldWidth - deltaX;
+            this.textBoxes[index].height = this.initialTextFieldHeight - deltaY;
+            break;
+          case 'top-right':
+            this.textBoxes[index].y = this.initialTextFieldY + deltaY;
+            this.textBoxes[index].width = this.initialTextFieldWidth + deltaX;
+            this.textBoxes[index].height = this.initialTextFieldHeight - deltaY;
+            break;
+          case 'bottom-left':
+            this.textBoxes[index].x = this.initialTextFieldX + deltaX;
+            this.textBoxes[index].width = this.initialTextFieldWidth - deltaX;
+            this.textBoxes[index].height = this.initialTextFieldHeight + deltaY;
+            break;
+          case 'bottom-right':
+            this.textBoxes[index].width = this.initialTextFieldWidth + deltaX;
+            this.textBoxes[index].height = this.initialTextFieldHeight + deltaY;
+            break;
+        }
 
-    const onMouseUp = () => {
-      this.activeHandle = null;
+        this.requestUpdate();
+      };
+
+      const onMouseUp = () => {
+        this.activeHandle = null;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
     };
 
     handleTopLeft.addEventListener('mousedown', onMouseDown.bind(null, 'top-left'));
     handleTopRight.addEventListener('mousedown', onMouseDown.bind(null, 'top-right'));
     handleBottomLeft.addEventListener('mousedown', onMouseDown.bind(null, 'bottom-left'));
     handleBottomRight.addEventListener('mousedown', onMouseDown.bind(null, 'bottom-right'));
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
   }
 
   async handleDownloadPdf() {
@@ -241,11 +258,13 @@ export class AdminCarePlan extends LitElement {
   }
 
   updated(changedProperties: Map<string | number | symbol, unknown>) {
-    if (changedProperties.has('isAddingTextField') && this.isAddingTextField) {
-      const textField = this.shadowRoot?.querySelector('.text-field') as HTMLElement;
-      if (textField) {
-        this.initializeDraggableTextField(textField);
-        this.initializeResizableTextField(textField);
+    if (changedProperties.has('textBoxes')) {
+      const textFields = this.shadowRoot?.querySelectorAll('.text-field');
+      if (textFields) {
+        textFields.forEach((textField, index) => {
+          this.initializeDraggableTextField(textField as HTMLElement, index);
+          this.initializeResizableTextField(textField as HTMLElement, index);
+        });
       }
     }
   }
@@ -260,19 +279,20 @@ export class AdminCarePlan extends LitElement {
           <div>
             <div style="position: relative;">
               <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: 100%; height: 600px; position: absolute; top: 0; left: 0;">
-              ${this.isAddingTextField ? html`
-                <div class="text-field" style="left: ${this.textFieldX}px; top: ${this.textFieldY}px; width: ${this.textFieldWidth}px; height: ${this.textFieldHeight}px;">
+              ${this.textBoxes.map((box) => html`
+                <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
                   Sample text field
                   <div class="handle top-left"></div>
                   <div class="handle top-right"></div>
                   <div class="handle bottom-left"></div>
                   <div class="handle bottom-right"></div>
                 </div>
-              ` : ''}
+              `)}
               <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);">
                 <button @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">Previous Page</button>
                 <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
                 <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
+                <button @click="${this.handleConfirmTextField}" class="confirm-button">Confirm</button>
                 <button @click="${this.handleDownloadPdf}">Download PDF with Text Field</button>
               </div>
             </div>
