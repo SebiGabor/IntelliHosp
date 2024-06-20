@@ -5,6 +5,7 @@ import { PDFDocument, rgb, PDFPage } from 'pdf-lib';
 @customElement('admin-care-plan')
 export class AdminCarePlan extends LitElement {
   @state() pdfFile: File | null = null;
+  @state() pdfDoc: PDFDocument | null = null;
   @state() pdfPages: PDFPage[] = [];
   @state() currentPageIndex: number = 0;
   @state() pageDataUrls: string[] = [];
@@ -76,22 +77,26 @@ export class AdminCarePlan extends LitElement {
     if (input.files && input.files.length > 0) {
       this.pdfFile = input.files[0];
       const fileArrayBuffer = await this.pdfFile.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(fileArrayBuffer);
+      this.pdfDoc = await PDFDocument.load(fileArrayBuffer);
 
       this.pdfPages = [];
-      for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-        const [page] = await pdfDoc.copyPages(pdfDoc, [i]);
+      for (let i = 0; i < this.pdfDoc.getPageCount(); i++) {
+        const [page] = await this.pdfDoc.copyPages(this.pdfDoc, [i]);
         this.pdfPages.push(page);
       }
 
       this.pageDataUrls = await Promise.all(this.pdfPages.map(async (page) => {
-        const newDocument = await PDFDocument.create();
-        const copiedPage = await newDocument.copyPages(pdfDoc, [this.pdfPages.indexOf(page)]);
-        newDocument.addPage(copiedPage[0]);
-        const pdfBytes = await newDocument.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        return URL.createObjectURL(blob);
+        if (this.pdfDoc) { // Check if pdfDoc is not null
+          const newDocument = await PDFDocument.create();
+          const copiedPage = await newDocument.copyPages(this.pdfDoc, [this.pdfPages.indexOf(page)]);
+          newDocument.addPage(copiedPage[0]);
+          const pdfBytes = await newDocument.save();
+          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          return URL.createObjectURL(blob);
+        }
+        throw new Error("PDF document is not loaded.");
       }));
+
 
       this.currentPageIndex = 0;
     }
@@ -115,7 +120,7 @@ export class AdminCarePlan extends LitElement {
     this.requestUpdate();
   }
 
-  handleConfirmTextField = async () => {
+  async handleConfirmTextField() {
     if (!this.pdfFile || this.currentPageIndex < 0 || this.currentPageIndex >= this.pdfPages.length) return;
 
     // Load the existing PDFDocument from the current page's URL
@@ -124,7 +129,7 @@ export class AdminCarePlan extends LitElement {
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
     const form = pdfDoc.getForm();
-    const page = pdfDoc.getPage(this.currentPageIndex);
+    const page = pdfDoc.getPage(0); // Get the first page of the new document
 
     // Calculate the scaling factor between the HTML embed and the actual PDF dimensions
     const pdfElement = this.shadowRoot?.querySelector('embed');
@@ -160,8 +165,7 @@ export class AdminCarePlan extends LitElement {
     this.textBoxes = [];
     this.isAddingTextField = false;
     this.requestUpdate();
-  };
-
+  }
 
   initializeDraggableTextField(textFieldElement: HTMLElement, index: number) {
     textFieldElement.addEventListener('mousedown', (e) => {
@@ -313,6 +317,5 @@ export class AdminCarePlan extends LitElement {
       ` : ''}
     </div>
   `;
-
   }
 }
