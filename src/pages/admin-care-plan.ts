@@ -9,8 +9,8 @@ export class AdminCarePlan extends LitElement {
   @state() currentPageIndex: number = 0;
   @state() pageDataUrls: string[] = [];
   @state() isAddingTextField: boolean = false;
-  @state() textFieldX: number = 50;
-  @state() textFieldY: number = 50;
+  @state() textFieldX: number = 0;
+  @state() textFieldY: number = 0;
   @state() textFieldWidth: number = 200;
   @state() textFieldHeight: number = 20;
   @state() dragHandleSize: number = 10;
@@ -106,10 +106,9 @@ export class AdminCarePlan extends LitElement {
   handleTextFieldAdd() {
     if (!this.pdfFile || this.currentPageIndex < 0 || this.currentPageIndex >= this.pdfPages.length) return;
 
-    // Add a new text field to the list
     this.textBoxes = [
       ...this.textBoxes,
-      { x: 50, y: 50, width: 200, height: 20 }
+      { x: this.textFieldX, y: this.textFieldY, width: this.textFieldWidth, height: this.textFieldHeight }
     ];
 
     this.isAddingTextField = true;
@@ -127,18 +126,27 @@ export class AdminCarePlan extends LitElement {
     const form = pdfDoc.getForm();
     const page = pdfDoc.getPage(this.currentPageIndex);
 
+    // Calculate the scaling factor between the HTML embed and the actual PDF dimensions
+    const pdfElement = this.shadowRoot?.querySelector('embed');
+    const pdfRect = pdfElement?.getBoundingClientRect();
+    const pdfWidth = pdfRect?.width || 1;
+    const pdfHeight = pdfRect?.height || 1;
+
+    const scaleX = page.getWidth() / pdfWidth;
+    const scaleY = page.getHeight() / pdfHeight;
+
     // Create PDFTextField for each text box
     this.textBoxes.forEach((box, index) => {
       const pdfTextField = form.createTextField(`TextField${Date.now()}-${index}`);
       pdfTextField.setText('Sample text');
       pdfTextField.addToPage(page, {
-        x: box.x,
-        y: box.y,
-        width: box.width,
-        height: box.height,
+        x: box.x * scaleX,
+        y: (pdfHeight - box.y - box.height) * scaleY,
+        width: box.width * scaleX,
+        height: box.height * scaleY,
         textColor: rgb(0, 0, 0),
         backgroundColor: rgb(1, 1, 1),
-        borderColor: rgb(0, 0, 0)
+        borderColor: rgb(0, 0, 0),
       });
     });
 
@@ -153,6 +161,7 @@ export class AdminCarePlan extends LitElement {
     this.isAddingTextField = false;
     this.requestUpdate();
   };
+
 
   initializeDraggableTextField(textFieldElement: HTMLElement, index: number) {
     textFieldElement.addEventListener('mousedown', (e) => {
@@ -273,32 +282,37 @@ export class AdminCarePlan extends LitElement {
     const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
 
     return html`
-      <div>
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
         <input type="file" accept="application/pdf" @change="${this.handleFileUpload}" />
         ${this.pageDataUrls.length > 0 ? html`
-          <div>
-            <div style="position: relative;">
-              <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: 100%; height: 600px; position: absolute; top: 0; left: 0;">
-              ${this.textBoxes.map((box) => html`
-                <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
-                  Sample text field
-                  <div class="handle top-left"></div>
-                  <div class="handle top-right"></div>
-                  <div class="handle bottom-left"></div>
-                  <div class="handle bottom-right"></div>
-                </div>
-              `)}
-              <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);">
-                <button @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">Previous Page</button>
-                <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
-                <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
-                <button @click="${this.handleConfirmTextField}" class="confirm-button">Confirm</button>
-                <button @click="${this.handleDownloadPdf}">Download PDF with Text Field</button>
-              </div>
-            </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">Previous Page</button>
+            <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
+            <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
+            <button @click="${this.handleConfirmTextField}" class="confirm-button">Confirm</button>
+            <button @click="${this.handleDownloadPdf}">Download PDF with Text Field</button>
           </div>
         ` : ''}
       </div>
-    `;
+      ${this.pageDataUrls.length > 0 ? html`
+        <div style="display: flex; justify-content: center; position: relative;">
+          <div style="position: relative;">
+            <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: ${600 * this.pdfPages[this.currentPageIndex].getWidth() / this.pdfPages[this.currentPageIndex].getHeight()}px; height: 600px;">
+            ${this.textBoxes.map((box) => html`
+              <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
+                Sample text field
+                <div class="handle top-left"></div>
+                <div class="handle top-right"></div>
+                <div class="handle bottom-left"></div>
+                <div class="handle bottom-right"></div>
+              </div>
+            `)}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
   }
 }
