@@ -140,15 +140,15 @@ export class AdminCarePlan extends LitElement {
     const scaleX = page.getWidth() / pdfWidth;
     const scaleY = page.getHeight() / pdfHeight;
 
-    // Create PDFTextField for each text box
     this.textBoxes.forEach((box, index) => {
       const pdfTextField = form.createTextField(`TextField${Date.now()}-${index}`);
-      pdfTextField.setText('Sample text');
+      pdfTextField.setText('');
       pdfTextField.addToPage(page, {
         x: box.x * scaleX,
         y: (pdfHeight - box.y - box.height) * scaleY,
         width: box.width * scaleX,
         height: box.height * scaleY,
+        borderWidth: 0,
         textColor: rgb(0, 0, 0),
         backgroundColor: rgb(1, 1, 1),
         borderColor: rgb(0, 0, 0),
@@ -304,10 +304,42 @@ export class AdminCarePlan extends LitElement {
 
   handleDeleteTextField(index: number) {
     if (index >= 0 && index < this.textBoxes.length) {
-      this.textBoxes.splice(index, 1); // Remove the text field at the specified index
-      this.requestUpdate(); // Trigger LitElement to re-render
+      this.textBoxes.splice(index, 1);
+      this.requestUpdate();
     }
   }
+
+  async handleDeleteLastTextField() {
+    if (!this.pdfDoc) return;
+
+    const currentPageUrl = this.pageDataUrls[this.currentPageIndex];
+    const existingPdfBytes = await fetch(currentPageUrl).then((res) => res.arrayBuffer());
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+    const form = pdfDoc.getForm();
+    if (!form) return;
+
+    const fields = form.getFields();
+    let removed = false;
+
+    for (let i = fields.length - 1; i >= 0; i--) {
+        const field = fields[i];
+        form.removeField(field);
+        removed = true;
+        break;
+    }
+
+    if (removed) {
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const updatedDataUrl = URL.createObjectURL(blob);
+
+      this.pageDataUrls[this.currentPageIndex] = updatedDataUrl;
+
+      this.requestUpdate();
+    }
+}
+
 
   render() {
     const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
@@ -322,6 +354,7 @@ export class AdminCarePlan extends LitElement {
               <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
               <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
               <button @click="${this.handleConfirmTextField}" class="confirm-button">Confirm</button>
+              <button @click="${this.handleDeleteLastTextField}">Delete last field</button>
               <button @click="${this.handleDownloadPdf}">Download PDF with Text Field</button>
             </div>
           ` : ''}
