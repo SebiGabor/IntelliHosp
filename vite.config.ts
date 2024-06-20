@@ -5,6 +5,7 @@ import reactRefresh from '@vitejs/plugin-react-refresh';
 export default defineConfig({
   base: "/",
   server: {
+    open: true,
     port: 5173,
     proxy: {
       '/add-hospital': 'http://localhost:3000',
