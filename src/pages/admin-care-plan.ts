@@ -340,6 +340,36 @@ export class AdminCarePlan extends LitElement {
     }
 }
 
+async handleSaveInDatabase(event: Event) {
+  event.preventDefault();
+
+  try {
+    if (!this.pdfDoc) return;
+
+    const pdfBytes = await this.pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const updatedDataUrl = URL.createObjectURL(blob);
+
+    const response = await fetch('/save-config', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            pdfDataUrl: updatedDataUrl
+        })
+    });
+
+    if (response.ok) {
+        alert('Configuration saved successfully!');
+    } else {
+        alert('Failed to save configuration');
+    }
+  } catch (error) {
+    console.error('Error saving configuration:', error);
+  }
+}
+
 
   render() {
     const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
@@ -355,6 +385,7 @@ export class AdminCarePlan extends LitElement {
               <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
               <button @click="${this.handleConfirmTextField}" class="confirm-button">Confirm</button>
               <button @click="${this.handleDeleteLastTextField}">Delete last field</button>
+              <button @click="${this.handleSaveInDatabase}">Save configuration</button>
               <button @click="${this.handleDownloadPdf}">Download PDF with Text Field</button>
             </div>
           ` : ''}

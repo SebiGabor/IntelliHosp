@@ -7,14 +7,11 @@ import pkg from 'pg';
 import generator from 'generate-password';
 import nodemailer from 'nodemailer';
 import loggedInData from './logged-in-data.js';
-import fs from 'fs';
-import multer from 'multer';
 
 dotenv.config();
 
 const app = express();
 const { Pool } = pkg;
-const upload = multer({ dest: 'uploads/' });
 
 const allowedOrigins = ['http://localhost:5173', 'https://white-grass-078bf751e.5.azurestaticapps.net'];
 
@@ -222,50 +219,25 @@ app.post('/admin-add-personnel', async (req, res) => {
   }
 });
 
-app.post('/save-config', upload.single('pdfFile'), async (req, res) => {
-  let textAreas = [];
-  if (req.body.textAreas) {
-    try {
-      const parsedData = JSON.parse(req.body.textAreas);
-      textAreas = parsedData.textAreas || []; // Ensure to default to an empty array if textAreas is undefined
-    } catch (error) {
-      console.error('Error parsing textAreas JSON:', error);
-      return res.status(400).send('Invalid JSON for textAreas');
+app.post('/save-config', async (req, res) => {
+  try {
+    const { pdfDataUrl } = req.body;
+
+    if (!pdfDataUrl) {
+      res.status(400).json({ error: 'pdfDataUrl is required' });
+      return;
     }
+
+    const query = 'UPDATE public.ih_hospitals SET "PDF" = $1 WHERE "ID" = $2';
+    const hospitalID = loggedInData.getHospitalID();
+
+    await pool.query(query, [pdfDataUrl, hospitalID]);
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error saving configuration:', error);
+    res.sendStatus(500);
   }
-
-  try{
-    const filePath = (req as any).file.path;
-    try {
-      const pdfContent = fs.readFileSync(filePath);
-
-      const query = 'UPDATE public.ih_hospitals SET "PDF" = $1, "TextArea" = $2 WHERE "ID" = $3';
-      await pool.query(query, [pdfContent, JSON.stringify(textAreas), loggedInData.getHospitalID()]);
-
-      res.sendStatus(200);
-      return;
-    } catch (err) {
-      console.error('Error saving configuration:', err);
-      res.sendStatus(500);
-      return;
-    } finally {
-      fs.unlinkSync(filePath);
-      return
-    }
-  } catch (err){
-    try {
-      const query = 'UPDATE public.ih_hospitals SET "TextArea" = $1 WHERE "ID" = $2';
-      await pool.query(query, [JSON.stringify(textAreas), loggedInData.getHospitalID()]);
-
-      res.sendStatus(200);
-      return;
-    } catch (err) {
-      console.error('Error saving configuration:', err);
-      res.sendStatus(500);
-      return;
-    }
-  }
-
 });
 
 
