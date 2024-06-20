@@ -262,13 +262,33 @@ export class AdminCarePlan extends LitElement {
   async handleDownloadPdf() {
     if (this.pageDataUrls.length === 0) return;
 
-    const pdfBytes = await fetch(this.pageDataUrls[this.currentPageIndex]).then((res) => res.blob());
+    const fetchPromises = this.pageDataUrls.map(url => fetch(url).then(res => res.blob()));
 
-    const downloadLink = document.createElement('a');
-    downloadLink.href = URL.createObjectURL(pdfBytes);
-    downloadLink.download = 'modified_pdf_with_text_field.pdf';
-    downloadLink.click();
-  }
+    try {
+        const pdfBlobs = await Promise.all(fetchPromises);
+
+        const finalPdfDoc = await PDFDocument.create();
+
+        for (const pdfBlob of pdfBlobs) {
+            const pdfBytes = await pdfBlob.arrayBuffer();
+            const pdf = await PDFDocument.load(pdfBytes);
+            const [page] = await finalPdfDoc.copyPages(pdf, [0]);
+            finalPdfDoc.addPage(page);
+        }
+
+        const finalPdfBytes = await finalPdfDoc.save();
+        const finalBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(finalBlob);
+        downloadLink.download = 'modified_combined_pdf.pdf';
+        downloadLink.click();
+
+    } catch (error) {
+        console.error('Error downloading PDF:', error);
+        // Handle error appropriately
+    }
+}
 
   updated(changedProperties: Map<string | number | symbol, unknown>) {
     if (changedProperties.has('textBoxes')) {
