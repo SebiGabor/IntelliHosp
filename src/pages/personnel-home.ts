@@ -6,6 +6,9 @@ import { styles } from '../styles/information-styles';
 import { styles as sharedStyles } from '../styles/shared-styles';
 
 import '@shoelace-style/shoelace/dist/components/card/card.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import { registerIconLibrary } from '@shoelace-style/shoelace/dist/utilities/icon-library.js';
 
 @customElement('personnel-home')
 export class PersonnelHome extends LitElement {
@@ -53,6 +56,20 @@ export class PersonnelHome extends LitElement {
 
       th {
         background-color: #3F72AF;
+        color: white;
+      }
+
+      td button {
+        padding: 5px 10px;
+        background-color: #3F72AF;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      td button:hover {
+        background-color: #2C5AA0;
       }
     `
   ];
@@ -61,6 +78,9 @@ export class PersonnelHome extends LitElement {
   patients: any[] = [];
 
   async firstUpdated() {
+    registerIconLibrary('default', {
+        resolver: name => `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.0.0/icons/${name}.svg`
+      });
     await this.fetchPatientsData();
   }
 
@@ -85,6 +105,11 @@ export class PersonnelHome extends LitElement {
     }
   }
 
+  handleButtonClick() {
+    const url = resolveRouterPath('personnel-complete-plan');
+    window.location.href = url;
+  }
+
   render() {
     return html`
       <main>
@@ -100,6 +125,7 @@ export class PersonnelHome extends LitElement {
                 <tr>
                   <th>Nume</th>
                   <th>CNP</th>
+                  <th>Plan de îngrijiri</th>
                 </tr>
               </thead>
               <tbody>
@@ -107,6 +133,9 @@ export class PersonnelHome extends LitElement {
                   <tr>
                     <td>${person.Nume}</td>
                     <td>${person.CNP}</td>
+                    <td>
+                      <sl-button variant="primary" @click=${() => this.handleButtonClick()}><sl-icon name="file-earmark-medical-fill"></sl-icon></sl-button>
+                    </td>
                   </tr>
                 `)}
               </tbody>
