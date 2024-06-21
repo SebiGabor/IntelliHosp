@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { PDFDocument, PDFPage } from 'pdf-lib';
+import { PDFDocument, PDFPage, PDFTextField, rgb } from 'pdf-lib';
 
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
@@ -19,7 +19,12 @@ export class PersonnelCompletePlan extends LitElement {
   @state() textFieldWidth: number = 200;
   @state() textFieldHeight: number = 20;
   @state() textBoxes: Array<{ x: number; y: number; width: number; height: number }> = [];
-  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | null | undefined } }> = [];
+  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | undefined } }> = [];
+  @state() textFieldsConstructed: boolean = false;
+  @state() pdfFetched: boolean = false;
+  @state() pdfRenderedWidth: number = 1;
+  @state() pdfRenderedHeight: number = 1;
+  @state() havePdfRenderedDimensions: boolean = false;
 
   static styles = css`
     input[type="file"] {
@@ -113,20 +118,7 @@ export class PersonnelCompletePlan extends LitElement {
           const pdfBytes = Uint8Array.from(atob(pdf_content), c => c.charCodeAt(0));
           this.pdfDoc = await PDFDocument.load(pdfBytes);
 
-          this.pdfPages = [];
-          for (let i = 0; i < this.pdfDoc.getPageCount(); i++) {
-            const [page] = await this.pdfDoc.copyPages(this.pdfDoc, [i]);
-            this.pdfPages.push(page);
-          }
-
-          this.pageDataUrls = await Promise.all(this.pdfPages.map(async (page) => {
-            const newDocument = await PDFDocument.create();
-            const copiedPage = await newDocument.copyPages(this.pdfDoc!, [this.pdfPages.indexOf(page)]);
-            newDocument.addPage(copiedPage[0]);
-            const pdfBytes = await newDocument.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            return URL.createObjectURL(blob);
-          }));
+          this.updatePdfURLs();
 
           const blob = new Blob([pdfBytes], { type: 'application/pdf' });
           this.pdfFile = new File([blob], 'fetched.pdf', { type: 'application/pdf' });
@@ -137,6 +129,7 @@ export class PersonnelCompletePlan extends LitElement {
             this.savedTextBoxes = saved_text_boxes.map((entry: any) => ({
               page: entry.page,
               textBox: {
+                fieldId: entry.textBox.fieldId,
                 x: entry.textBox.x,
                 y: entry.textBox.y,
                 width: entry.textBox.width,
@@ -146,7 +139,7 @@ export class PersonnelCompletePlan extends LitElement {
             }));
           }
 
-          this.requestUpdate();
+          this.pdfFetched = true;
 
         } else {
           console.error('PDF content not found in response data');
@@ -159,6 +152,82 @@ export class PersonnelCompletePlan extends LitElement {
     }
   }
 
+  async updatePdfURLs() {
+    if(!this.pdfDoc) return;
+
+    this.pdfPages = [];
+
+    for (let i = 0; i < this.pdfDoc.getPageCount(); i++) {
+      const [page] = await this.pdfDoc.copyPages(this.pdfDoc, [i]);
+      this.pdfPages.push(page);
+    }
+
+    this.pageDataUrls = await Promise.all(this.pdfPages.map(async (page) => {
+      const newDocument = await PDFDocument.create();
+      const copiedPage = await newDocument.copyPages(this.pdfDoc!, [this.pdfPages.indexOf(page)]);
+      newDocument.addPage(copiedPage[0]);
+      const pdfBytes = await newDocument.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      return URL.createObjectURL(blob);
+    }));
+
+}
+
+  pdfRenderedDimensions() {
+    const pdfElement = this.shadowRoot?.querySelector('embed');
+    const pdfRect = pdfElement?.getBoundingClientRect();
+    this.pdfRenderedWidth = pdfRect?.width || 1;
+    this.pdfRenderedHeight = pdfRect?.height || 1;
+    this.havePdfRenderedDimensions = true;
+  }
+
+  async constructTextFields() {
+    if (!this.pdfDoc) return;
+
+    const form = this.pdfDoc.getForm();
+
+    for (let i = 0; i < this.pdfDoc.getPageCount() || 0; i++) {
+      const page = this.pdfDoc.getPage(i);
+
+      const scaleX = (page.getWidth()) / this.pdfRenderedWidth;
+      const scaleY = (page.getHeight()) / this.pdfRenderedHeight;
+
+      this.savedTextBoxes.forEach((iterator) => {
+        if (iterator.page == i) {
+          const pdfTextField = form.createTextField(iterator.textBox.fieldId);
+          pdfTextField.setText(iterator.textBox.text);
+
+          pdfTextField.addToPage(page, {
+            x: iterator.textBox.x * scaleX,
+            y: (this.pdfRenderedHeight - iterator.textBox.y - iterator.textBox.height) * scaleY,
+            width: iterator.textBox.width * scaleX,
+            height: iterator.textBox.height * scaleY,
+            borderWidth: 0,
+            textColor: rgb(0, 0, 0),
+            backgroundColor: rgb(1, 1, 1),
+            borderColor: rgb(0, 0, 0),
+          });
+        }
+      });
+    }
+    this.textFieldsConstructed = true;
+
+    this.updatePdfURLs();
+
+    this.requestUpdate();
+  }
+
+  updated(changedProperties: Map<string | number | symbol, unknown>) {
+    super.updated(changedProperties);
+
+    if (this.pageDataUrls.length > 0 && !this.havePdfRenderedDimensions) {
+      this.pdfRenderedDimensions();
+    }
+
+    if (this.pdfFetched && !this.textFieldsConstructed && this.havePdfRenderedDimensions) {
+      this.constructTextFields();
+    }
+  }
 
   navigateToPage(index: number) {
     if (index >= 0 && index < this.pdfPages.length) {
@@ -166,18 +235,47 @@ export class PersonnelCompletePlan extends LitElement {
     }
   }
 
-
   async handleDownloadPdf() {
-    if (this.pageDataUrls.length === 0) return;
+    if (this.pageDataUrls.length === 0 || !this.pdfDoc) return;
 
+    const finalPdfBytes = await this.pdfDoc.save();
+    const finalBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+
+    const downloadLink = document.createElement('a');
+    downloadLink.href = URL.createObjectURL(finalBlob);
+    downloadLink.download = 'modified_combined_pdf.pdf';
+    downloadLink.click();
+
+    //this.updateTextFields();
   }
-
 
   async handleSaveInDatabase(event: Event) {
     event.preventDefault();
 
+    this.updateTextFields();
   }
 
+  async updateTextFields() {
+    if (this.pdfDoc && this.savedTextBoxes.length > 0) {
+      const form = this.pdfDoc.getForm();
+
+      if (!form) {
+        console.warn('No form found in the PDF document.');
+        return;
+      }
+
+      for (const savedTextBox of this.savedTextBoxes) {
+        const { page, textBox } = savedTextBox;
+        if (page !== this.currentPageIndex) continue;
+
+        const fieldId = textBox.fieldId;
+        const text = textBox.text;
+
+        const field = form.getField(fieldId) as PDFTextField | undefined;
+        field?.setText(text || '');
+      }
+    }
+  }
 
   render() {
     const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
@@ -209,7 +307,7 @@ export class PersonnelCompletePlan extends LitElement {
           ` : ''}
         </div>
         <div style="position: relative;">
-              <embed src="${pageDataUrl}#view=FitW" type="application/pdf" style="width: 100%; height: 600px;">
+            <embed src="${pageDataUrl}#view=FitW" type="application/pdf" style="width: 100%; height: 600px;">
         </div>
       </main>
     `;

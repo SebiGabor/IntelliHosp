@@ -32,7 +32,7 @@ export class AdminCarePlan extends LitElement {
   @state() initialDragY: number = 0;
   @state() isConfirmingTextField: boolean = false;
   @state() textBoxes: Array<{ x: number; y: number; width: number; height: number }> = [];
-  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | null | undefined } }> = [];
+  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | undefined }; confirmed: boolean }> = [];
 
   static styles = css`
     input[type="file"] {
@@ -52,6 +52,11 @@ export class AdminCarePlan extends LitElement {
       border: 2px dashed #000;
       background-color: rgba(255, 255, 255, 0.5);
       cursor: move;
+    }
+    .confirmed-text-field {
+      position: absolute;
+      border: 2px #000;
+      background-color: rgba(0, 255, 255, 0.2);
     }
     .handle {
       position: absolute;
@@ -147,21 +152,25 @@ export class AdminCarePlan extends LitElement {
 
           this.currentPageIndex = 0;
 
-          // Populate savedTextBoxes from fetched data
           if (saved_text_boxes) {
             this.savedTextBoxes = saved_text_boxes.map((entry: any) => ({
               page: entry.page,
               textBox: {
+                fieldId: entry.textBox.fieldId,
                 x: entry.textBox.x,
                 y: entry.textBox.y,
                 width: entry.textBox.width,
                 height: entry.textBox.height,
-                text: entry.textBox.text || '' // Ensure text is not null or undefined
-              }
+                text: entry.textBox.text || ''
+              },
+              confirmed: true
             }));
           }
+          console.log(this.savedTextBoxes);
 
           this.requestUpdate();
+
+          console.log(this.savedTextBoxes);
 
         } else {
           console.error('PDF content not found in response data');
@@ -175,6 +184,7 @@ export class AdminCarePlan extends LitElement {
   }
 
   async handleFileUpload(event: Event) {
+    this.savedTextBoxes = [];
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.pdfFile = input.files[0];
@@ -225,34 +235,10 @@ export class AdminCarePlan extends LitElement {
     const existingPdfBytes = await fetch(currentPageUrl).then((res) => res.arrayBuffer());
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
-    const form = pdfDoc.getForm();
-    const page = pdfDoc.getPage(0);
-
-    const pdfElement = this.shadowRoot?.querySelector('embed');
-    const pdfRect = pdfElement?.getBoundingClientRect();
-    const pdfWidth = pdfRect?.width || 1;
-    const pdfHeight = pdfRect?.height || 1;
-
-    const scaleX = page.getWidth() / pdfWidth;
-    const scaleY = page.getHeight() / pdfHeight;
-
     this.textBoxes.forEach((box, index) => {
       const id = `TextField${Date.now()}-${index}`;
-      const pdfTextField = form.createTextField(id);
-      pdfTextField.setText('');
-
-      pdfTextField.addToPage(page, {
-        x: box.x * scaleX,
-        y: (pdfHeight - box.y - box.height) * scaleY,
-        width: box.width * scaleX,
-        height: box.height * scaleY,
-        borderWidth: 0,
-        textColor: rgb(0, 0, 0),
-        backgroundColor: rgb(1, 1, 1),
-        borderColor: rgb(0, 0, 0),
-      });
-
-      this.savedTextBoxes.push({ page: this.currentPageIndex, textBox: { ...box, text: pdfTextField.getText(), fieldId: id } });
+      const text = '';
+      this.savedTextBoxes.push({ page: this.currentPageIndex, textBox: { x: box.x, y: box.y, width: box.width, height: box.height, text: text, fieldId: id }, confirmed: true });
     });
 
     const pdfBytes = await pdfDoc.save();
@@ -261,7 +247,6 @@ export class AdminCarePlan extends LitElement {
 
     this.pageDataUrls[this.currentPageIndex] = updatedDataUrl;
 
-    // Clear current text boxes after saving
     this.textBoxes = [];
     this.isAddingTextField = false;
     this.requestUpdate();
@@ -362,6 +347,8 @@ export class AdminCarePlan extends LitElement {
   async handleDownloadPdf() {
     if (this.pageDataUrls.length === 0) return;
 
+    this.handleConfirmTextField();
+
     const fetchPromises = this.pageDataUrls.map(url => fetch(url).then(res => res.blob()));
 
     try {
@@ -373,6 +360,37 @@ export class AdminCarePlan extends LitElement {
         const pdf = await PDFDocument.load(pdfBytes);
         const [page] = await finalPdfDoc.copyPages(pdf, [0]);
         finalPdfDoc.addPage(page);
+      }
+
+      const pdfElement = this.shadowRoot?.querySelector('embed');
+      const pdfRect = pdfElement?.getBoundingClientRect();
+      const pdfWidth = pdfRect?.width || 1;
+      const pdfHeight = pdfRect?.height || 1;
+
+      const form = finalPdfDoc.getForm();
+      for(let i=0; i < finalPdfDoc.getPageCount(); i++) {
+        const page = finalPdfDoc.getPage(i);
+
+        const scaleX = page.getWidth() / pdfWidth;
+        const scaleY = page.getHeight() / pdfHeight;
+
+        this.savedTextBoxes.forEach((iterator) => {
+          if(iterator.page == i) {
+          const pdfTextField = form.createTextField(iterator.textBox.fieldId);
+          pdfTextField.setText(iterator.textBox.text);
+
+          pdfTextField.addToPage(page, {
+            x: iterator.textBox.x * scaleX,
+            y: (pdfHeight - iterator.textBox.y - iterator.textBox.height) * scaleY,
+            width: iterator.textBox.width * scaleX,
+            height: iterator.textBox.height * scaleY,
+            borderWidth: 0,
+            textColor: rgb(0, 0, 0),
+            backgroundColor: rgb(1, 1, 1),
+            borderColor: rgb(0, 0, 0),
+          });
+        }
+        })
       }
 
       const finalPdfBytes = await finalPdfDoc.save();
@@ -414,44 +432,16 @@ export class AdminCarePlan extends LitElement {
     }
   }
 
-  async handleDeleteSavedTextField(page: number, fieldId: string) {
-    // Find the saved text field based on page and fieldId
-    const index = this.savedTextBoxes.findIndex(entry => entry.page === page && entry.textBox.fieldId === fieldId);
-
-    if (index !== -1) {
-      const { textBox } = this.savedTextBoxes[index];
-      const currentPageUrl = this.pageDataUrls[page];
-      const existingPdfBytes = await fetch(currentPageUrl).then((res) => res.arrayBuffer());
-      const pdfDoc = await PDFDocument.load(existingPdfBytes);
-      const form = pdfDoc.getForm();
-
-      if (!form) {
-        console.error('Form not found in PDF document.');
-        return;
-      }
-
-      // Use the stored fieldId to find the field
-      const textField = form.getField(textBox.fieldId);
-
-      if (textField) {
-        form.removeField(textField);
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const updatedDataUrl = URL.createObjectURL(blob);
-        this.pageDataUrls[page] = updatedDataUrl;
-
-        // Remove from savedTextBoxes array after successfully removing from PDF
-        this.savedTextBoxes.splice(index, 1);
-
-        this.requestUpdate();
-      } else {
-        console.error('Text field not found in PDF form.');
-      }
-    }
+  async handleDeleteSavedTextField(fieldId: string) {
+    const index = this.savedTextBoxes.findIndex(entry => entry.textBox.fieldId === fieldId);
+    this.savedTextBoxes.splice(index, 1);
+    this.requestUpdate();
   }
 
   async handleSaveInDatabase(event: Event) {
     event.preventDefault();
+
+    this.handleConfirmTextField();
 
     try {
       if (!this.pdfDoc || this.pageDataUrls.length === 0) return;
@@ -463,7 +453,6 @@ export class AdminCarePlan extends LitElement {
       const form = pdfDoc.getForm();
       if (!form) return;
 
-      // Remove all existing text fields from the PDF
       const fields = form.getFields();
       for (const field of fields) {
         form.removeField(field);
@@ -495,7 +484,7 @@ export class AdminCarePlan extends LitElement {
 
       if (response.ok) {
         alert('Configuration saved successfully!');
-        this.savedTextBoxes = [];
+        this.requestUpdate();
       } else {
         alert('Failed to save configuration');
       }
@@ -543,11 +532,10 @@ export class AdminCarePlan extends LitElement {
               ${this.savedTextBoxes
                 .filter(entry => entry.page === this.currentPageIndex)
                 .map((entry) => html`
-                  <!-- Rendering saved text fields for the current page -->
-                  <div class="text-field" style="left: ${entry.textBox.x}px; top: ${entry.textBox.y}px; width: ${entry.textBox.width}px; height: ${entry.textBox.height}px;">
+                  <div class="${entry.confirmed ? 'confirmed-text-field' : 'text-field'}"  style="left: ${entry.textBox.x}px; top: ${entry.textBox.y}px; width: ${entry.textBox.width}px; height: ${entry.textBox.height}px;">
                     ${entry.textBox.text ? entry.textBox.text : ''}
                     <div class="delete-button-container">
-                      <sl-button variant="danger" size="small" class="small-button" @click="${() => this.handleDeleteSavedTextField(entry.page, entry.textBox.fieldId)}">
+                      <sl-button variant="danger" size="small" class="small-button" @click="${() => this.handleDeleteSavedTextField(entry.textBox.fieldId)}">
                         <sl-icon name="x-square-fill"></sl-icon>
                       </sl-button>
                     </div>

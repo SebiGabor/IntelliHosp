@@ -42,7 +42,10 @@ self.addEventListener('fetch', event => {
                 .catch(() => {
                     return caches.match(event.request)
                         .then(cachedResponse => {
-                            return cachedResponse || caches.match('/');
+                            if (event.request.mode === 'navigate') {
+                                return caches.match('/');
+                            }
+                            return cachedResponse;
                         });
                 })
         );
@@ -50,3 +53,4 @@ self.addEventListener('fetch', event => {
         event.respondWith(fetch(event.request));
     }
 });
+

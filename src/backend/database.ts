@@ -336,12 +336,12 @@ app.post('/save-config', upload.single('pdfFile'), async (req, res) => {
 
 app.post('/fetch-config', async (_req, res) => {
   try {
-    const query = 'SELECT encode("PDF", \'base64\') as pdf_content FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
+    const query = 'SELECT encode("PDF", \'base64\') as pdf_content, "TextBoxes" as saved_text_boxes FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
     const result = await pool.query(query, [loggedInData.getHospitalID()]);
 
     if (result.rows.length > 0) {
-      const { pdf_content } = result.rows[0];
-      res.json({ pdf_content });
+      const { pdf_content, saved_text_boxes } = result.rows[0];
+      res.json({ pdf_content, saved_text_boxes });
     } else {
       res.status(404).json({ error: 'Configuration not found' });
     }
@@ -350,6 +350,7 @@ app.post('/fetch-config', async (_req, res) => {
     res.sendStatus(500);
   }
 });
+
 
 
 

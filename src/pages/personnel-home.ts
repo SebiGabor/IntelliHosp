@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { resolveRouterPath } from '../router';
+import { router, resolveRouterPath } from '../router';
 
 import { styles } from '../styles/information-styles';
 import { styles as sharedStyles } from '../styles/shared-styles';
@@ -106,8 +106,7 @@ export class PersonnelHome extends LitElement {
   }
 
   handleButtonClick() {
-    const url = resolveRouterPath('personnel-complete-plan');
-    window.location.href = url;
+    router.navigate(resolveRouterPath('personnel-complete-plan'));
   }
 
   render() {
