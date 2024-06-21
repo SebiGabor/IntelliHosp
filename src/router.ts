@@ -90,6 +90,14 @@ export const router = new Router({
       ],
       render: () => html`<personnel-home></personnel-home>`
     },
+    {
+      path: resolveRouterPath('personnel-add-patient'),
+      title: 'Adaugă pacient',
+      plugins: [
+        lazy(() => import('./pages/personnel-add-patient.js')),
+      ],
+      render: () => html`<personnel-add-patient></personnel-add-patient>`
+    },
   ]
 }) ?? new Router();
 

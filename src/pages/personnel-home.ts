@@ -58,22 +58,25 @@ export class PersonnelHome extends LitElement {
   ];
 
   @state()
-  personnel: any[] = [];
+  patients: any[] = [];
 
-  async connectedCallback() {
-    super.connectedCallback();
-    await this.fetchPersonnelData();
+  async firstUpdated() {
+    await this.fetchPatientsData();
   }
 
-  async fetchPersonnelData() {
+  async fetchPatientsData() {
     try {
-      const response = await fetch('/get-personnel');
+      const response = await fetch('/get-patients', {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
       if (Array.isArray(data)) {
-        this.personnel = data;
+        this.patients = data;
       } else {
         throw new Error('Invalid data format');
       }
@@ -86,33 +89,29 @@ export class PersonnelHome extends LitElement {
     return html`
       <main>
         <div class="header">
-          <h2>Personal spital</h2>
-          <sl-button href="${resolveRouterPath('admin-add-personnel')}" variant="primary">Înregistrează personal nou</sl-button>
+          <h2>Pacienți spital</h2>
+          <sl-button href="${resolveRouterPath('personnel-add-patient')}" variant="primary">Adaugă un pacient nou</sl-button>
         </div>
 
         <sl-card>
-          ${this.personnel.length > 0 ? html`
+          ${this.patients.length > 0 ? html`
             <table>
               <thead>
                 <tr>
-                  <th>Calificare</th>
                   <th>Nume</th>
-                  <th>Prenume</th>
-                  <th>Email</th>
+                  <th>CNP</th>
                 </tr>
               </thead>
               <tbody>
-                ${this.personnel.map(person => html`
+                ${this.patients.map(person => html`
                   <tr>
-                    <td>${person.Calificare}</td>
                     <td>${person.Nume}</td>
-                    <td>${person.Prenume}</td>
-                    <td>${person.Email}</td>
+                    <td>${person.CNP}</td>
                   </tr>
                 `)}
               </tbody>
             </table>
-          ` : html`<p>Se încarcă personalul...</p>`}
+          ` : html`<p>Se încarcă pacienții...</p>`}
         </sl-card>
       </main>
     `;

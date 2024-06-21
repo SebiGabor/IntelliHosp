@@ -404,7 +404,7 @@ export class AdminCarePlan extends LitElement {
       const field = fields[i];
       form.removeField(field);
       removed = true;
-      break; // Remove only the last field, as per your requirement
+      break;
     }
 
     if (removed) {

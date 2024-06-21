@@ -120,8 +120,6 @@ app.post('/add-hospital', async (req, res) => {
 app.post('/personnel-login', async (req, res) => {
   const { username, password } = req.body;
 
-  console.log('personnel-login', username, password);
-
   if (!username || !password) {
     res.status(400).json({ error: "Username and password are required" });
     return;
@@ -132,7 +130,6 @@ app.post('/personnel-login', async (req, res) => {
     const result = await client.query('SELECT "IDspital", "Parola" FROM public.ih_personnel WHERE "Username" = $1', [username]);
     client.release();
 
-    console.log(result.rows);
     if (result.rows.length === 0) {
       console.log(`Username not found: ${username}`);
       res.status(401).json({ error: "Username not found" });
@@ -153,7 +150,7 @@ app.post('/personnel-login', async (req, res) => {
     const hospital = result2Hosp.rows[0];
 
     loggedInData.setHospitalName(hospital.Nume);
-    loggedInData.setHospitalID(personnel.IDspita);
+    loggedInData.setHospitalID(personnel.IDspital);
 
     res.status(200).json({ hospitalName: hospital.Nume });
     return;
@@ -213,6 +210,41 @@ app.get('/get-personnel', async (_req, res) => {
     console.error('Error fetching personnel data:', err.message);
     res.status(500).json({ error: 'Internal Server Error', details: err.message });
     return;
+  }
+});
+
+app.get('/get-patients', async (_req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT "Nume", "CNP" FROM public.ih_patients WHERE "IDspital" = $1', [loggedInData.getHospitalID()]);
+    client.release();
+    res.status(200).json(result.rows);
+    return;
+  } catch (err: any) {
+    console.error('Error fetching personnel data:', err.message);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    return;
+  }
+});
+
+app.post('/personnel-add-patient', async (req, res) => {
+  const { nume, cnp } = req.body;
+
+  if (!nume || !cnp) {
+    res.status(400).json({ error: "All fields are required" });
+    return;
+  }
+
+  try {
+    const client = await pool.connect();
+    const insertQuery = 'INSERT INTO public.ih_patients ("IDspital", "Nume", "CNP") VALUES ($1, $2, $3)';
+    const result = await client.query(insertQuery, [loggedInData.getHospitalID(), nume, cnp]);
+    client.release();
+
+    res.status(201).json(result.rows[0]);
+  }catch (err: any) {
+    console.error("Error executing query: ", err.message, err.stack);
+    res.status(500).json({ error: "Internal error", details: err.message });
   }
 });
 
