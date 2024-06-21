@@ -90,39 +90,52 @@ export class AdminCarePlan extends LitElement {
 
   async fetchPdfConfig() {
     try {
-        const response = await fetch('/fetch-config', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const { pdf_content } = await response.json();
-
-            if (pdf_content) {
-                const pdfBytes = Uint8Array.from(atob(pdf_content), c => c.charCodeAt(0));
-
-                // Load PDF document
-                this.pdfDoc = await PDFDocument.load(pdfBytes);
-                this.pdfPages = await this.pdfDoc.getPages();
-                this.pageDataUrls = [URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }))];
-                this.currentPageIndex = 0;
-                this.requestUpdate();
-
-                // Ensure you update any UI components or state that depends on the loaded PDF
-                // Example: this.renderPdfPages(); // Implement this method to render PDF pages
-            } else {
-                console.error('PDF content not found in response data');
-            }
-        } else {
-            console.error('Failed to fetch PDF configuration:', response.statusText);
+      const response = await fetch('/fetch-config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         }
-    } catch (error) {
-        console.error('Error fetching PDF configuration:', error);
-    }
-}
+      });
 
+      if (response.ok) {
+        const { pdf_content } = await response.json();
+
+        if (pdf_content) {
+          const pdfBytes = Uint8Array.from(atob(pdf_content), c => c.charCodeAt(0));
+
+          this.pdfDoc = await PDFDocument.load(pdfBytes);
+
+          this.pdfPages = [];
+          for (let i = 0; i < this.pdfDoc.getPageCount(); i++) {
+            const [page] = await this.pdfDoc.copyPages(this.pdfDoc, [i]);
+            this.pdfPages.push(page);
+          }
+
+          this.pageDataUrls = await Promise.all(this.pdfPages.map(async (page) => {
+            const newDocument = await PDFDocument.create();
+            const copiedPage = await newDocument.copyPages(this.pdfDoc!, [this.pdfPages.indexOf(page)]);
+            newDocument.addPage(copiedPage[0]);
+            const pdfBytes = await newDocument.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            return URL.createObjectURL(blob);
+          }));
+
+          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          this.pdfFile = new File([blob], 'fetched.pdf', { type: 'application/pdf' });
+
+          this.currentPageIndex = 0;
+          this.requestUpdate();
+
+        } else {
+          console.error('PDF content not found in response data');
+        }
+      } else {
+        console.error('Failed to fetch PDF configuration:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching PDF configuration:', error);
+    }
+  }
 
   async handleFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;
