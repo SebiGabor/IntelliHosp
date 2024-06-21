@@ -19,12 +19,9 @@ export class PersonnelCompletePlan extends LitElement {
   @state() textFieldWidth: number = 200;
   @state() textFieldHeight: number = 20;
   @state() textBoxes: Array<{ x: number; y: number; width: number; height: number }> = [];
-  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | undefined } }> = [];
+  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | undefined }; scale: {x: number; y: number; pdfHeight: number} }> = [];
   @state() textFieldsConstructed: boolean = false;
   @state() pdfFetched: boolean = false;
-  @state() pdfRenderedWidth: number = 1;
-  @state() pdfRenderedHeight: number = 1;
-  @state() havePdfRenderedDimensions: boolean = false;
 
   static styles = css`
     input[type="file"] {
@@ -135,6 +132,11 @@ export class PersonnelCompletePlan extends LitElement {
                 width: entry.textBox.width,
                 height: entry.textBox.height,
                 text: entry.textBox.text || ''
+              },
+              scale: {
+                x: entry.scale.x,
+                y: entry.scale.y,
+                pdfHeight: entry.pdfHeight
               }
             }));
           }
@@ -170,38 +172,29 @@ export class PersonnelCompletePlan extends LitElement {
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       return URL.createObjectURL(blob);
     }));
-
 }
-
-  pdfRenderedDimensions() {
-    const pdfElement = this.shadowRoot?.querySelector('embed');
-    const pdfRect = pdfElement?.getBoundingClientRect();
-    this.pdfRenderedWidth = pdfRect?.width || 1;
-    this.pdfRenderedHeight = pdfRect?.height || 1;
-    this.havePdfRenderedDimensions = true;
-  }
 
   async constructTextFields() {
     if (!this.pdfDoc) return;
+
+    const pdfElement = this.shadowRoot?.querySelector('embed');
+    const pdfRect = pdfElement?.getBoundingClientRect();
+    const pdfRenderedHeight = pdfRect?.height || 1;
 
     const form = this.pdfDoc.getForm();
 
     for (let i = 0; i < this.pdfDoc.getPageCount() || 0; i++) {
       const page = this.pdfDoc.getPage(i);
 
-      const scaleX = (page.getWidth()) / this.pdfRenderedWidth;
-      const scaleY = (page.getHeight()) / this.pdfRenderedHeight;
-
       this.savedTextBoxes.forEach((iterator) => {
         if (iterator.page == i) {
           const pdfTextField = form.createTextField(iterator.textBox.fieldId);
           pdfTextField.setText(iterator.textBox.text);
-
           pdfTextField.addToPage(page, {
-            x: iterator.textBox.x * scaleX,
-            y: (this.pdfRenderedHeight - iterator.textBox.y - iterator.textBox.height) * scaleY,
-            width: iterator.textBox.width * scaleX,
-            height: iterator.textBox.height * scaleY,
+            x: iterator.textBox.x * iterator.scale.x,
+            y: (pdfRenderedHeight - iterator.textBox.y - iterator.textBox.height) * iterator.scale.y,
+            width: iterator.textBox.width * iterator.scale.x,
+            height: iterator.textBox.height * iterator.scale.y,
             borderWidth: 0,
             textColor: rgb(0, 0, 0),
             backgroundColor: rgb(1, 1, 1),
@@ -220,11 +213,7 @@ export class PersonnelCompletePlan extends LitElement {
   updated(changedProperties: Map<string | number | symbol, unknown>) {
     super.updated(changedProperties);
 
-    if (this.pageDataUrls.length > 0 && !this.havePdfRenderedDimensions) {
-      this.pdfRenderedDimensions();
-    }
-
-    if (this.pdfFetched && !this.textFieldsConstructed && this.havePdfRenderedDimensions) {
+    if (this.pdfFetched && !this.textFieldsConstructed) {
       this.constructTextFields();
     }
   }

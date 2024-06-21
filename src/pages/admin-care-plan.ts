@@ -32,7 +32,8 @@ export class AdminCarePlan extends LitElement {
   @state() initialDragY: number = 0;
   @state() isConfirmingTextField: boolean = false;
   @state() textBoxes: Array<{ x: number; y: number; width: number; height: number }> = [];
-  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | undefined }; confirmed: boolean }> = [];
+  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | undefined }; confirmed: boolean; scale: {x: number; y: number} }> = [];
+  @state() pdfHeight: number = 0;
 
   static styles = css`
     input[type="file"] {
@@ -235,10 +236,20 @@ export class AdminCarePlan extends LitElement {
     const existingPdfBytes = await fetch(currentPageUrl).then((res) => res.arrayBuffer());
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
+    const pdfElement = this.shadowRoot?.querySelector('embed');
+    const pdfRect = pdfElement?.getBoundingClientRect();
+    const pdfWidth = pdfRect?.width || 1;
+    this.pdfHeight = pdfRect?.height || 1;
+
     this.textBoxes.forEach((box, index) => {
+      const page = pdfDoc.getPage(index);
+
+      const scaleX = page.getWidth() / pdfWidth;
+      const scaleY = page.getHeight() / this.pdfHeight;
+
       const id = `TextField${Date.now()}-${index}`;
       const text = '';
-      this.savedTextBoxes.push({ page: this.currentPageIndex, textBox: { x: box.x, y: box.y, width: box.width, height: box.height, text: text, fieldId: id }, confirmed: true });
+      this.savedTextBoxes.push({ page: this.currentPageIndex, textBox: { x: box.x, y: box.y, width: box.width, height: box.height, text: text, fieldId: id }, confirmed: true, scale: {x: scaleX, y: scaleY} });
     });
 
     const pdfBytes = await pdfDoc.save();
@@ -362,17 +373,9 @@ export class AdminCarePlan extends LitElement {
         finalPdfDoc.addPage(page);
       }
 
-      const pdfElement = this.shadowRoot?.querySelector('embed');
-      const pdfRect = pdfElement?.getBoundingClientRect();
-      const pdfWidth = pdfRect?.width || 1;
-      const pdfHeight = pdfRect?.height || 1;
-
       const form = finalPdfDoc.getForm();
       for(let i=0; i < finalPdfDoc.getPageCount(); i++) {
         const page = finalPdfDoc.getPage(i);
-
-        const scaleX = page.getWidth() / pdfWidth;
-        const scaleY = page.getHeight() / pdfHeight;
 
         this.savedTextBoxes.forEach((iterator) => {
           if(iterator.page == i) {
@@ -380,10 +383,10 @@ export class AdminCarePlan extends LitElement {
           pdfTextField.setText(iterator.textBox.text);
 
           pdfTextField.addToPage(page, {
-            x: iterator.textBox.x * scaleX,
-            y: (pdfHeight - iterator.textBox.y - iterator.textBox.height) * scaleY,
-            width: iterator.textBox.width * scaleX,
-            height: iterator.textBox.height * scaleY,
+            x: iterator.textBox.x * iterator.scale.x,
+            y: (this.pdfHeight - iterator.textBox.y - iterator.textBox.height)* iterator.scale.y,
+            width: iterator.textBox.width * iterator.scale.x,
+            height: iterator.textBox.height * iterator.scale.y,
             borderWidth: 0,
             textColor: rgb(0, 0, 0),
             backgroundColor: rgb(1, 1, 1),
