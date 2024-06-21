@@ -84,7 +84,7 @@ export class AdminPersonnel extends LitElement {
 
   render() {
     return html`
-      <app-header ?enableBack="${true}"></app-header>
+      <app-header ?enableBack="${true}" backPath="admin-home"></app-header>
 
       <main>
         <div class="header">

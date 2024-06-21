@@ -1,15 +1,15 @@
 import { LitElement, css, html } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
 import { router, resolveRouterPath } from '../router';
-
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 
 @customElement('app-header')
 export class AppHeader extends LitElement {
   @property({ type: String }) title = localStorage.getItem('hospitalName') ?? '';
 
-  @property({ type: Boolean }) enableBack: boolean = false;
-  @property({ type: Boolean }) enableLogOut: boolean = false;
+  @property({ type: Boolean }) enableBack = false;
+  @property({ type: Boolean }) enableLogOut = false;
+  @property({ type: String }) backPath = '';
 
   static styles = css`
     header {
@@ -80,7 +80,7 @@ export class AppHeader extends LitElement {
 
     fetch('/logout', { method: 'POST' })
       .then(() => {
-        router.navigate(resolveRouterPath());
+        router.navigate(resolveRouterPath('app-home'));
         history.pushState(null, document.title, location.href);
         window.addEventListener('popstate', function () {
           history.pushState(null, document.title, location.href);
@@ -90,11 +90,12 @@ export class AppHeader extends LitElement {
   }
 
   render() {
+    alert(this.backPath);
     return html`
       <header>
         <div class="title-container">
           ${this.enableBack ? html`
-            <sl-button href="${resolveRouterPath()}">Înapoi</sl-button>
+            <sl-button href="${resolveRouterPath(this.backPath)}">Înapoi</sl-button>
           ` : ''}
           <h1>${this.title}</h1>
         </div>

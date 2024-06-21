@@ -60,7 +60,7 @@ export class AdminAddPersonnel extends LitElement {
 
   render() {
     return html`
-      <app-header ?enableBack="${true}"></app-header>
+      <app-header ?enableBack="${true}" backPath="admin-personnel"></app-header>
 
       <main>
         <h2>Adaugă personal spital</h2>
