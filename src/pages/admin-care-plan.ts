@@ -2,6 +2,11 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PDFDocument, PDFPage, rgb } from 'pdf-lib';
 
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
+import { registerIconLibrary } from '@shoelace-style/shoelace/dist/utilities/icon-library.js';
+
 @customElement('admin-care-plan')
 export class AdminCarePlan extends LitElement {
   @state() pdfFile: File | null = null;
@@ -71,6 +76,12 @@ export class AdminCarePlan extends LitElement {
       right: -5px;
     }
   `;
+
+  async firstUpdated() {
+    registerIconLibrary('default', {
+      resolver: name => `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.0.0/icons/${name}.svg`
+    });
+  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -413,43 +424,58 @@ export class AdminCarePlan extends LitElement {
 }
 
 
-  render() {
-    const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
+render() {
+  const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
 
-    return html`
-      <div>
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-          <input type="file" accept="application/pdf" @change="${this.handleFileUpload}" />
-          ${this.pageDataUrls.length > 0 ? html`
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <button @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">Previous Page</button>
-              <button @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">Next Page</button>
-              <button @click="${this.handleTextFieldAdd}">Add Text Field</button>
-              <button @click="${this.handleConfirmTextField}" class="confirm-button">Confirm</button>
-              <button @click="${this.handleDeleteLastTextField}">Delete last field</button>
-              <button @click="${this.handleSaveInDatabase}">Save configuration</button>
-              <button @click="${this.handleDownloadPdf}">Download PDF with Text Field</button>
-            </div>
-          ` : ''}
+  return html`
+    <app-header ?enableBack="${true}" backPath="admin-home" .enableTitle="${false}"></app-header>
+
+    <main>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-left:10%; padding-top:6px;">
+        <div style="position: relative; flex: 1; margin-right: 5%;">
+          <input type="file" accept="application/pdf" @change="${this.handleFileUpload}" style="opacity: 0; position: absolute; width: 100%; height: 100%; cursor: pointer;">
+          <sl-button variant="primary">Încarcă pdf <sl-icon name="file-earmark-arrow-up-fill"></sl-icon></sl-button>
         </div>
         ${this.pageDataUrls.length > 0 ? html`
-          <div style="display: flex; justify-content: center; position: relative;">
-            <div style="position: relative;">
-              <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: ${600 * this.pdfPages[this.currentPageIndex].getWidth() / this.pdfPages[this.currentPageIndex].getHeight()}px; height: 600px;">
-              ${this.textBoxes.map((box, index) => html`
-                <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
-                  Sample text field
-                  <div class="handle top-left"></div>
-                  <div class="handle top-right"></div>
-                  <div class="handle bottom-left"></div>
-                  <div class="handle bottom-right"></div>
-                  <button @click="${() => this.handleDeleteTextField(index)}">Delete</button>
-                </div>
-              `)}
-            </div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-right: 5%;">
+            <sl-icon-button name="arrow-left-square-fill" label="Pagina anterioară" @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}"></sl-icon-button>
+            <sl-icon-button name="arrow-right-square-fill" label="Pagina următoare" @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}"></sl-icon-button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-right: 5%;">
+            <sl-button variant="primary" @click="${this.handleTextFieldAdd}">Adaugă câmp <sl-icon name="plus-square-fill"></sl-icon></sl-button>
+            <sl-button variant="primary" @click="${this.handleConfirmTextField}" class="confirm-button">Confirmă <sl-icon name="check-square-fill"></sl-icon></sl-button>
+            <sl-button variant="primary" @click="${this.handleDeleteLastTextField}">Șterge ultimul câmp <sl-icon name="x-square-fill"></sl-icon></sl-button>
+          </div>
+          <div style="margin-right: 5%;">
+            <sl-button variant="primary" @click="${this.handleSaveInDatabase}">Salvează configurația <sl-icon name="cloud-plus-fill"></sl-icon></sl-button>
+          </div>
+          <div style="margin-right: 5%;">
+            <sl-button variant="primary" @click="${this.handleDownloadPdf}">Descarcă pdf <sl-icon name="file-earmark-arrow-down-fill"></sl-icon></sl-button>
           </div>
         ` : ''}
       </div>
-    `;
-  }
+      ${this.pageDataUrls.length > 0 ? html`
+        <div style="display: flex; justify-content: center; position: relative;">
+          <div style="position: relative;">
+            <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: ${600 * this.pdfPages[this.currentPageIndex].getWidth() / this.pdfPages[this.currentPageIndex].getHeight()}px; height: 600px;">
+            ${this.textBoxes.map((box, index) => html`
+              <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
+                Sample text field
+                <div class="handle top-left"></div>
+                <div class="handle top-right"></div>
+                <div class="handle bottom-left"></div>
+                <div class="handle bottom-right"></div>
+                <sl-button variant="danger" @click="${() => this.handleDeleteTextField(index)}">Delete</sl-button>
+              </div>
+            `)}
+          </div>
+        </div>
+      ` : ''}
+    </main>
+  `;
+}
+
+
+
+
 }

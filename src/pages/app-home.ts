@@ -42,10 +42,6 @@ export class AppHome extends LitElement {
       margin-bottom: 16px;
     }
 
-    .icon-button-color sl-icon-button {
-      --icon-color: var(--ih-primary-color-2);
-    }
-
     @media (max-width: 768px) {
       #loginForm {
         max-width: 90%;

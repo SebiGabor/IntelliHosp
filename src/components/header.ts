@@ -9,6 +9,7 @@ export class AppHeader extends LitElement {
 
   @property({ type: Boolean }) enableBack = false;
   @property({ type: Boolean }) enableLogOut = false;
+  @property({ type: Boolean }) enableTitle = true;
   @property({ type: String }) backPath = '';
 
   static styles = css`
@@ -50,6 +51,7 @@ export class AppHeader extends LitElement {
       text-align: center;
       word-wrap: break-word;
       white-space: normal;
+      padding-left:5px;
     }
 
     @media (max-width: 600px) {
@@ -90,14 +92,13 @@ export class AppHeader extends LitElement {
   }
 
   render() {
-    alert(this.backPath);
     return html`
       <header>
         <div class="title-container">
           ${this.enableBack ? html`
             <sl-button href="${resolveRouterPath(this.backPath)}">Înapoi</sl-button>
           ` : ''}
-          <h1>${this.title}</h1>
+          ${this.enableTitle ? html`<h1>${this.title}</h1>` : ''}
         </div>
         <div class="log-out-container">
           ${this.enableLogOut ? html`
