@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { PDFDocument, rgb, PDFPage } from 'pdf-lib';
+import { PDFDocument, PDFPage, rgb } from 'pdf-lib';
 
 @customElement('admin-care-plan')
 export class AdminCarePlan extends LitElement {
@@ -72,6 +72,47 @@ export class AdminCarePlan extends LitElement {
     }
   `;
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.fetchPdfConfig();
+  }
+
+  async fetchPdfConfig() {
+    try {
+        const response = await fetch('/fetch-config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const { pdf_content } = await response.json();
+
+            if (pdf_content) {
+                const pdfBytes = Uint8Array.from(atob(pdf_content), c => c.charCodeAt(0));
+
+                // Load PDF document
+                this.pdfDoc = await PDFDocument.load(pdfBytes);
+                this.pdfPages = await this.pdfDoc.getPages();
+                this.pageDataUrls = [URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }))];
+                this.currentPageIndex = 0;
+                this.requestUpdate();
+
+                // Ensure you update any UI components or state that depends on the loaded PDF
+                // Example: this.renderPdfPages(); // Implement this method to render PDF pages
+            } else {
+                console.error('PDF content not found in response data');
+            }
+        } else {
+            console.error('Failed to fetch PDF configuration:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error fetching PDF configuration:', error);
+    }
+}
+
+
   async handleFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
@@ -86,17 +127,13 @@ export class AdminCarePlan extends LitElement {
       }
 
       this.pageDataUrls = await Promise.all(this.pdfPages.map(async (page) => {
-        if (this.pdfDoc) { // Check if pdfDoc is not null
-          const newDocument = await PDFDocument.create();
-          const copiedPage = await newDocument.copyPages(this.pdfDoc, [this.pdfPages.indexOf(page)]);
-          newDocument.addPage(copiedPage[0]);
-          const pdfBytes = await newDocument.save();
-          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-          return URL.createObjectURL(blob);
-        }
-        throw new Error("PDF document is not loaded.");
+        const newDocument = await PDFDocument.create();
+        const copiedPage = await newDocument.copyPages(this.pdfDoc!, [this.pdfPages.indexOf(page)]);
+        newDocument.addPage(copiedPage[0]);
+        const pdfBytes = await newDocument.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        return URL.createObjectURL(blob);
       }));
-
 
       this.currentPageIndex = 0;
     }
@@ -123,15 +160,13 @@ export class AdminCarePlan extends LitElement {
   async handleConfirmTextField() {
     if (!this.pdfFile || this.currentPageIndex < 0 || this.currentPageIndex >= this.pdfPages.length) return;
 
-    // Load the existing PDFDocument from the current page's URL
     const currentPageUrl = this.pageDataUrls[this.currentPageIndex];
     const existingPdfBytes = await fetch(currentPageUrl).then((res) => res.arrayBuffer());
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
     const form = pdfDoc.getForm();
-    const page = pdfDoc.getPage(0); // Get the first page of the new document
+    const page = pdfDoc.getPage(0);
 
-    // Calculate the scaling factor between the HTML embed and the actual PDF dimensions
     const pdfElement = this.shadowRoot?.querySelector('embed');
     const pdfRect = pdfElement?.getBoundingClientRect();
     const pdfWidth = pdfRect?.width || 1;
@@ -161,7 +196,6 @@ export class AdminCarePlan extends LitElement {
 
     this.pageDataUrls[this.currentPageIndex] = updatedDataUrl;
 
-    // Clear text boxes
     this.textBoxes = [];
     this.isAddingTextField = false;
     this.requestUpdate();
@@ -265,30 +299,28 @@ export class AdminCarePlan extends LitElement {
     const fetchPromises = this.pageDataUrls.map(url => fetch(url).then(res => res.blob()));
 
     try {
-        const pdfBlobs = await Promise.all(fetchPromises);
+      const pdfBlobs = await Promise.all(fetchPromises);
+      const finalPdfDoc = await PDFDocument.create();
 
-        const finalPdfDoc = await PDFDocument.create();
+      for (const pdfBlob of pdfBlobs) {
+        const pdfBytes = await pdfBlob.arrayBuffer();
+        const pdf = await PDFDocument.load(pdfBytes);
+        const [page] = await finalPdfDoc.copyPages(pdf, [0]);
+        finalPdfDoc.addPage(page);
+      }
 
-        for (const pdfBlob of pdfBlobs) {
-            const pdfBytes = await pdfBlob.arrayBuffer();
-            const pdf = await PDFDocument.load(pdfBytes);
-            const [page] = await finalPdfDoc.copyPages(pdf, [0]);
-            finalPdfDoc.addPage(page);
-        }
+      const finalPdfBytes = await finalPdfDoc.save();
+      const finalBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
 
-        const finalPdfBytes = await finalPdfDoc.save();
-        const finalBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
-
-        const downloadLink = document.createElement('a');
-        downloadLink.href = URL.createObjectURL(finalBlob);
-        downloadLink.download = 'modified_combined_pdf.pdf';
-        downloadLink.click();
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(finalBlob);
+      downloadLink.download = 'modified_combined_pdf.pdf';
+      downloadLink.click();
 
     } catch (error) {
-        console.error('Error downloading PDF:', error);
-        // Handle error appropriately
+      console.error('Error downloading PDF:', error);
     }
-}
+  }
 
   updated(changedProperties: Map<string | number | symbol, unknown>) {
     if (changedProperties.has('textBoxes')) {
@@ -323,10 +355,10 @@ export class AdminCarePlan extends LitElement {
     let removed = false;
 
     for (let i = fields.length - 1; i >= 0; i--) {
-        const field = fields[i];
-        form.removeField(field);
-        removed = true;
-        break;
+      const field = fields[i];
+      form.removeField(field);
+      removed = true;
+      break; // Remove only the last field, as per your requirement
     }
 
     if (removed) {
@@ -338,36 +370,46 @@ export class AdminCarePlan extends LitElement {
 
       this.requestUpdate();
     }
-}
-
-async handleSaveInDatabase(event: Event) {
-  event.preventDefault();
-
-  try {
-    if (!this.pdfDoc) return;
-
-    const pdfBytes = await this.pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const updatedDataUrl = URL.createObjectURL(blob);
-
-    const response = await fetch('/save-config', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            pdfDataUrl: updatedDataUrl
-        })
-    });
-
-    if (response.ok) {
-        alert('Configuration saved successfully!');
-    } else {
-        alert('Failed to save configuration');
-    }
-  } catch (error) {
-    console.error('Error saving configuration:', error);
   }
+
+  async handleSaveInDatabase(event: Event) {
+    event.preventDefault();
+
+    try {
+        if (!this.pdfDoc || this.pageDataUrls.length === 0) return;
+
+        const fetchPromises = this.pageDataUrls.map(url => fetch(url).then(res => res.blob()));
+
+        const pdfBlobs = await Promise.all(fetchPromises);
+        const finalPdfDoc = await PDFDocument.create();
+
+        for (const pdfBlob of pdfBlobs) {
+          const pdfBytes = await pdfBlob.arrayBuffer();
+          const pdf = await PDFDocument.load(pdfBytes);
+          const [page] = await finalPdfDoc.copyPages(pdf, [0]);
+          finalPdfDoc.addPage(page);
+        }
+
+        const finalPdfBytes = await finalPdfDoc.save();
+
+        const response = await fetch('/save-config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pdfBytes: Array.from(finalPdfBytes)
+            })
+        });
+
+        if (response.ok) {
+            alert('Configuration saved successfully!');
+        } else {
+            alert('Failed to save configuration');
+        }
+    } catch (error) {
+        console.error('Error saving configuration:', error);
+    }
 }
 
 

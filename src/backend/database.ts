@@ -7,11 +7,17 @@ import pkg from 'pg';
 import generator from 'generate-password';
 import nodemailer from 'nodemailer';
 import loggedInData from './logged-in-data.js';
+import multer from 'multer';
 
 dotenv.config();
 
 const app = express();
 const { Pool } = pkg;
+const upload = multer({
+  limits: {
+    fileSize: 50 * 1024 * 1024,
+  },
+});
 
 const allowedOrigins = ['http://localhost:5173', 'https://white-grass-078bf751e.5.azurestaticapps.net'];
 
@@ -26,6 +32,9 @@ const pool = new Pool({
   port: Number(DB_PORT),
   ssl: true
 });
+
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -219,36 +228,37 @@ app.post('/admin-add-personnel', async (req, res) => {
   }
 });
 
-app.post('/save-config', async (req, res) => {
+app.post('/save-config', upload.single('pdfFile'), async (req, res) => {
   try {
-    const { pdfDataUrl } = req.body;
+    const { pdfBytes } = req.body;
 
-    if (!pdfDataUrl) {
-      res.status(400).json({ error: 'pdfDataUrl is required' });
-      return;
+    if (!pdfBytes || !Array.isArray(pdfBytes)) {
+      return res.status(400).json({ error: 'pdfBytes is required and must be an array' });
     }
 
-    const query = 'UPDATE public.ih_hospitals SET "PDF" = $1 WHERE "ID" = $2';
     const hospitalID = loggedInData.getHospitalID();
+    const pdfContent = Buffer.from(pdfBytes);
 
-    await pool.query(query, [pdfDataUrl, hospitalID]);
+    const query = 'UPDATE public.ih_hospitals SET "PDF" = $1 WHERE "ID" = $2';
+    await pool.query(query, [pdfContent, hospitalID]);
 
     res.sendStatus(200);
+    return;
   } catch (error) {
     console.error('Error saving configuration:', error);
     res.sendStatus(500);
+    return;
   }
 });
 
-
 app.post('/fetch-config', async (_req, res) => {
   try {
-    const query = 'SELECT encode("PDF", \'base64\') as pdf_content, "TextArea" FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
+    const query = 'SELECT encode("PDF", \'base64\') as pdf_content FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
     const result = await pool.query(query, [loggedInData.getHospitalID()]);
 
     if (result.rows.length > 0) {
-      const { pdf_content, TextArea } = result.rows[0];
-      res.json({ pdf_content, text_areas: TextArea });
+      const { pdf_content } = result.rows[0];
+      res.json({ pdf_content });
     } else {
       res.status(404).json({ error: 'Configuration not found' });
     }
