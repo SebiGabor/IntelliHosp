@@ -309,17 +309,21 @@ app.post('/admin-add-personnel', async (req, res) => {
 
 app.post('/save-config', upload.single('pdfFile'), async (req, res) => {
   try {
-    const { pdfBytes } = req.body;
+    const { pdfBytes, textBoxes } = req.body;
 
     if (!pdfBytes || !Array.isArray(pdfBytes)) {
       return res.status(400).json({ error: 'pdfBytes is required and must be an array' });
     }
+    if (!textBoxes || !Array.isArray(textBoxes)) {
+      return res.status(400).json({ error: 'textBoxes is required and must be an array' });
+    }
 
     const hospitalID = loggedInData.getHospitalID();
     const pdfContent = Buffer.from(pdfBytes);
+    const textBoxesJson = JSON.stringify(textBoxes);
 
-    const query = 'UPDATE public.ih_hospitals SET "PDF" = $1 WHERE "ID" = $2';
-    await pool.query(query, [pdfContent, hospitalID]);
+    const query = 'UPDATE public.ih_hospitals SET "PDF" = $1, "TextBoxes" = $2 WHERE "ID" = $3';
+    await pool.query(query, [pdfContent, textBoxesJson, hospitalID]);
 
     res.sendStatus(200);
     return;

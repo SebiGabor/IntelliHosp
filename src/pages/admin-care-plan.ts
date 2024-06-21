@@ -32,6 +32,7 @@ export class AdminCarePlan extends LitElement {
   @state() initialDragY: number = 0;
   @state() isConfirmingTextField: boolean = false;
   @state() textBoxes: Array<{ x: number; y: number; width: number; height: number }> = [];
+  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | null | undefined } }> = [];
 
   static styles = css`
     input[type="file"] {
@@ -120,11 +121,10 @@ export class AdminCarePlan extends LitElement {
       });
 
       if (response.ok) {
-        const { pdf_content } = await response.json();
+        const { pdf_content, saved_text_boxes } = await response.json();
 
         if (pdf_content) {
           const pdfBytes = Uint8Array.from(atob(pdf_content), c => c.charCodeAt(0));
-
           this.pdfDoc = await PDFDocument.load(pdfBytes);
 
           this.pdfPages = [];
@@ -146,6 +146,21 @@ export class AdminCarePlan extends LitElement {
           this.pdfFile = new File([blob], 'fetched.pdf', { type: 'application/pdf' });
 
           this.currentPageIndex = 0;
+
+          // Populate savedTextBoxes from fetched data
+          if (saved_text_boxes) {
+            this.savedTextBoxes = saved_text_boxes.map((entry: any) => ({
+              page: entry.page,
+              textBox: {
+                x: entry.textBox.x,
+                y: entry.textBox.y,
+                width: entry.textBox.width,
+                height: entry.textBox.height,
+                text: entry.textBox.text || '' // Ensure text is not null or undefined
+              }
+            }));
+          }
+
           this.requestUpdate();
 
         } else {
@@ -222,8 +237,10 @@ export class AdminCarePlan extends LitElement {
     const scaleY = page.getHeight() / pdfHeight;
 
     this.textBoxes.forEach((box, index) => {
-      const pdfTextField = form.createTextField(`TextField${Date.now()}-${index}`);
+      const id = `TextField${Date.now()}-${index}`;
+      const pdfTextField = form.createTextField(id);
       pdfTextField.setText('');
+
       pdfTextField.addToPage(page, {
         x: box.x * scaleX,
         y: (pdfHeight - box.y - box.height) * scaleY,
@@ -234,6 +251,8 @@ export class AdminCarePlan extends LitElement {
         backgroundColor: rgb(1, 1, 1),
         borderColor: rgb(0, 0, 0),
       });
+
+      this.savedTextBoxes.push({ page: this.currentPageIndex, textBox: { ...box, text: pdfTextField.getText(), fieldId: id } });
     });
 
     const pdfBytes = await pdfDoc.save();
@@ -242,6 +261,7 @@ export class AdminCarePlan extends LitElement {
 
     this.pageDataUrls[this.currentPageIndex] = updatedDataUrl;
 
+    // Clear current text boxes after saving
     this.textBoxes = [];
     this.isAddingTextField = false;
     this.requestUpdate();
@@ -369,16 +389,23 @@ export class AdminCarePlan extends LitElement {
   }
 
   updated(changedProperties: Map<string | number | symbol, unknown>) {
+    super.updated(changedProperties);
+
     if (changedProperties.has('textBoxes')) {
-      const textFields = this.shadowRoot?.querySelectorAll('.text-field');
-      if (textFields) {
-        textFields.forEach((textField, index) => {
-          this.initializeDraggableTextField(textField as HTMLElement, index);
-          this.initializeResizableTextField(textField as HTMLElement, index);
-        });
-      }
+      this.updateComplete.then(() => {
+        const textFields = this.shadowRoot?.querySelectorAll('.text-field');
+        if (textFields) {
+          textFields.forEach((textField, index) => {
+            this.initializeDraggableTextField(textField as HTMLElement, index);
+            this.initializeResizableTextField(textField as HTMLElement, index);
+          });
+        }
+      }).catch(error => {
+        console.error('Error updating component:', error);
+      });
     }
   }
+
 
   handleDeleteTextField(index: number) {
     if (index >= 0 && index < this.textBoxes.length) {
@@ -387,34 +414,39 @@ export class AdminCarePlan extends LitElement {
     }
   }
 
-  async handleDeleteLastTextField() {
-    if (!this.pdfDoc) return;
+  async handleDeleteSavedTextField(page: number, fieldId: string) {
+    // Find the saved text field based on page and fieldId
+    const index = this.savedTextBoxes.findIndex(entry => entry.page === page && entry.textBox.fieldId === fieldId);
 
-    const currentPageUrl = this.pageDataUrls[this.currentPageIndex];
-    const existingPdfBytes = await fetch(currentPageUrl).then((res) => res.arrayBuffer());
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    if (index !== -1) {
+      const { textBox } = this.savedTextBoxes[index];
+      const currentPageUrl = this.pageDataUrls[page];
+      const existingPdfBytes = await fetch(currentPageUrl).then((res) => res.arrayBuffer());
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      const form = pdfDoc.getForm();
 
-    const form = pdfDoc.getForm();
-    if (!form) return;
+      if (!form) {
+        console.error('Form not found in PDF document.');
+        return;
+      }
 
-    const fields = form.getFields();
-    let removed = false;
+      // Use the stored fieldId to find the field
+      const textField = form.getField(textBox.fieldId);
 
-    for (let i = fields.length - 1; i >= 0; i--) {
-      const field = fields[i];
-      form.removeField(field);
-      removed = true;
-      break;
-    }
+      if (textField) {
+        form.removeField(textField);
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const updatedDataUrl = URL.createObjectURL(blob);
+        this.pageDataUrls[page] = updatedDataUrl;
 
-    if (removed) {
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const updatedDataUrl = URL.createObjectURL(blob);
+        // Remove from savedTextBoxes array after successfully removing from PDF
+        this.savedTextBoxes.splice(index, 1);
 
-      this.pageDataUrls[this.currentPageIndex] = updatedDataUrl;
-
-      this.requestUpdate();
+        this.requestUpdate();
+      } else {
+        console.error('Text field not found in PDF form.');
+      }
     }
   }
 
@@ -422,96 +454,122 @@ export class AdminCarePlan extends LitElement {
     event.preventDefault();
 
     try {
-        if (!this.pdfDoc || this.pageDataUrls.length === 0) return;
+      if (!this.pdfDoc || this.pageDataUrls.length === 0) return;
 
-        const fetchPromises = this.pageDataUrls.map(url => fetch(url).then(res => res.blob()));
+      const currentPageUrl = this.pageDataUrls[this.currentPageIndex];
+      const existingPdfBytes = await fetch(currentPageUrl).then((res) => res.arrayBuffer());
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
-        const pdfBlobs = await Promise.all(fetchPromises);
-        const finalPdfDoc = await PDFDocument.create();
+      const form = pdfDoc.getForm();
+      if (!form) return;
 
-        for (const pdfBlob of pdfBlobs) {
-          const pdfBytes = await pdfBlob.arrayBuffer();
-          const pdf = await PDFDocument.load(pdfBytes);
-          const [page] = await finalPdfDoc.copyPages(pdf, [0]);
-          finalPdfDoc.addPage(page);
-        }
+      // Remove all existing text fields from the PDF
+      const fields = form.getFields();
+      for (const field of fields) {
+        form.removeField(field);
+      }
 
-        const finalPdfBytes = await finalPdfDoc.save();
+      const fetchPromises = this.pageDataUrls.map(url => fetch(url).then(res => res.blob()));
+      const pdfBlobs = await Promise.all(fetchPromises);
+      const finalPdfDoc = await PDFDocument.create();
 
-        const response = await fetch('/save-config', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                pdfBytes: Array.from(finalPdfBytes)
-            })
-        });
+      for (const pdfBlob of pdfBlobs) {
+        const pdfBytes = await pdfBlob.arrayBuffer();
+        const pdf = await PDFDocument.load(pdfBytes);
+        const [page] = await finalPdfDoc.copyPages(pdf, [0]);
+        finalPdfDoc.addPage(page);
+      }
 
-        if (response.ok) {
-            alert('Configuration saved successfully!');
-        } else {
-            alert('Failed to save configuration');
-        }
+      const finalPdfBytes = await finalPdfDoc.save();
+
+      const response = await fetch('/save-config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pdfBytes: Array.from(finalPdfBytes),
+          textBoxes: this.savedTextBoxes
+        })
+      });
+
+      if (response.ok) {
+        alert('Configuration saved successfully!');
+        this.savedTextBoxes = [];
+      } else {
+        alert('Failed to save configuration');
+      }
     } catch (error) {
-        console.error('Error saving configuration:', error);
+      console.error('Error saving configuration:', error);
     }
-}
+  }
 
 
-render() {
-  const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
+  render() {
+    const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
 
-  return html`
-    <app-header ?enableBack="${true}" .backPath="${'admin-home'}" .enableTitle="${false}"></app-header>
+    return html`
+      <app-header ?enableBack="${true}" .backPath="${'admin-home'}" .enableTitle="${false}"></app-header>
 
-    <main>
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-left:10%; padding-top:6px;">
-        <div style="position: relative; flex: 1; margin-right: 5%;">
-          <input id="fileInput" type="file" accept="application/pdf" @change="${this.handleFileUpload}" style="display: none;">
-          <sl-button variant="primary" @click="${() => this.shadowRoot?.getElementById('fileInput')?.click()}">
-            Încarcă pdf <sl-icon name="file-earmark-arrow-up-fill"></sl-icon>
-          </sl-button>
+      <main>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-left:10%; padding-top:6px;">
+          <div style="position: relative; flex: 1; margin-right: 5%;">
+            <input id="fileInput" type="file" accept="application/pdf" @change="${this.handleFileUpload}" style="display: none;">
+            <sl-button variant="primary" @click="${() => this.shadowRoot?.getElementById('fileInput')?.click()}">
+              Încarcă pdf <sl-icon name="file-earmark-arrow-up-fill"></sl-icon>
+            </sl-button>
+          </div>
+          ${this.pageDataUrls.length > 0 ? html`
+            <div style="display: flex; align-items: center; gap: 10px; margin-right: 5%;">
+              <sl-button variant="primary" @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}"><sl-icon name="arrow-left-square-fill"></sl-icon></sl-button>
+              <sl-button variant="primary" @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}"><sl-icon name="arrow-right-square-fill"></sl-icon></sl-button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-right: 5%;">
+              <sl-button variant="primary" @click="${this.handleTextFieldAdd}">Adaugă câmp <sl-icon name="plus-square-fill"></sl-icon></sl-button>
+              <sl-button variant="primary" @click="${this.handleConfirmTextField}" class="confirm-button">Confirmă <sl-icon name="check-square-fill"></sl-icon></sl-button>
+            </div>
+            <div style="margin-right: 5%;">
+              <sl-button variant="primary" @click="${this.handleSaveInDatabase}">Salvează configurația <sl-icon name="cloud-plus-fill"></sl-icon></sl-button>
+            </div>
+            <div style="margin-right: 5%;">
+              <sl-button variant="primary" @click="${this.handleDownloadPdf}">Descarcă pdf <sl-icon name="file-earmark-arrow-down-fill"></sl-icon></sl-button>
+            </div>
+          ` : ''}
         </div>
         ${this.pageDataUrls.length > 0 ? html`
-          <div style="display: flex; align-items: center; gap: 10px; margin-right: 5%;">
-            <sl-button variant="primary" @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}"><sl-icon name="arrow-left-square-fill"></sl-icon></sl-button>
-            <sl-button variant="primary" @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}"><sl-icon name="arrow-right-square-fill"></sl-icon></sl-button>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px; margin-right: 5%;">
-            <sl-button variant="primary" @click="${this.handleTextFieldAdd}">Adaugă câmp <sl-icon name="plus-square-fill"></sl-icon></sl-button>
-            <sl-button variant="primary" @click="${this.handleConfirmTextField}" class="confirm-button">Confirmă <sl-icon name="check-square-fill"></sl-icon></sl-button>
-            <sl-button variant="primary" @click="${this.handleDeleteLastTextField}">Șterge ultimul câmp <sl-icon name="x-square-fill"></sl-icon></sl-button>
-          </div>
-          <div style="margin-right: 5%;">
-            <sl-button variant="primary" @click="${this.handleSaveInDatabase}">Salvează configurația <sl-icon name="cloud-plus-fill"></sl-icon></sl-button>
-          </div>
-          <div style="margin-right: 5%;">
-            <sl-button variant="primary" @click="${this.handleDownloadPdf}">Descarcă pdf <sl-icon name="file-earmark-arrow-down-fill"></sl-icon></sl-button>
+          <div style="display: flex; justify-content: center; position: relative;">
+            <div style="position: relative;">
+              <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: ${600 * this.pdfPages[this.currentPageIndex].getWidth() / this.pdfPages[this.currentPageIndex].getHeight()}px; height: 600px;">
+              ${this.savedTextBoxes
+                .filter(entry => entry.page === this.currentPageIndex)
+                .map((entry) => html`
+                  <!-- Rendering saved text fields for the current page -->
+                  <div class="text-field" style="left: ${entry.textBox.x}px; top: ${entry.textBox.y}px; width: ${entry.textBox.width}px; height: ${entry.textBox.height}px;">
+                    ${entry.textBox.text ? entry.textBox.text : ''}
+                    <div class="delete-button-container">
+                      <sl-button variant="danger" size="small" class="small-button" @click="${() => this.handleDeleteSavedTextField(entry.page, entry.textBox.fieldId)}">
+                        <sl-icon name="x-square-fill"></sl-icon>
+                      </sl-button>
+                    </div>
+                  </div>
+              `)}
+              ${this.textBoxes.map((box, index) => html`
+                <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
+                  <div class="handle top-left"></div>
+                  <div class="handle top-right"></div>
+                  <div class="handle bottom-left"></div>
+                  <div class="handle bottom-right"></div>
+                  <div class="delete-button-container">
+                    <sl-button variant="danger" size="small" class="small-button" @click="${() => this.handleDeleteTextField(index)}">
+                      <sl-icon name="x-square-fill"></sl-icon>
+                    </sl-button>
+                  </div>
+                </div>
+              `)}
+            </div>
           </div>
         ` : ''}
-      </div>
-      ${this.pageDataUrls.length > 0 ? html`
-        <div style="display: flex; justify-content: center; position: relative;">
-          <div style="position: relative;">
-            <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: ${600 * this.pdfPages[this.currentPageIndex].getWidth() / this.pdfPages[this.currentPageIndex].getHeight()}px; height: 600px;">
-            ${this.textBoxes.map((box, index) => html`
-              <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
-                <div class="handle top-left"></div>
-                <div class="handle top-right"></div>
-                <div class="handle bottom-left"></div>
-                <div class="handle bottom-right"></div>
-                <div class="delete-button-container">
-                  <sl-button variant="danger" size="small" class="small-button" @click="${() => this.handleDeleteTextField(index)}">
-                    <sl-icon name="x-square-fill"></sl-icon>
-                  </sl-button>
-                </div>
-              </div>
-            `)}
-          </div>
-        </div>
-      ` : ''}
-    </main>
+      </main>
     `;
   }
 

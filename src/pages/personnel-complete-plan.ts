@@ -1,187 +1,216 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { customElement, state } from 'lit/decorators.js';
+import { PDFDocument, PDFPage } from 'pdf-lib';
+
 import '@shoelace-style/shoelace/dist/components/button/button.js';
-import '@shoelace-style/shoelace/dist/components/card/card.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
+import { registerIconLibrary } from '@shoelace-style/shoelace/dist/utilities/icon-library.js';
 
 @customElement('personnel-complete-plan')
 export class PersonnelCompletePlan extends LitElement {
-  @property({ type: Array }) textAreas: any[] = [];
-  @property({ type: Array }) textValues: string[] = [];
-  @property({ type: String }) pdfBlobUrl: string | null = null;
+  @state() pdfFile: File | null = null;
+  @state() pdfDoc: PDFDocument | null = null;
+  @state() pdfPages: PDFPage[] = [];
+  @state() currentPageIndex: number = 0;
+  @state() pageDataUrls: string[] = [];
+  @state() textFieldX: number = 0;
+  @state() textFieldY: number = 0;
+  @state() textFieldWidth: number = 200;
+  @state() textFieldHeight: number = 20;
+  @state() textBoxes: Array<{ x: number; y: number; width: number; height: number }> = [];
+  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | null | undefined } }> = [];
 
   static styles = css`
-    :host {
-      display: block;
-      margin: auto;
-      max-width: 800px;
+    input[type="file"] {
+      margin: 20px 0;
     }
-
-    main {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-
-    sl-card {
-      width: 100%;
-      max-width: 1200px;
-    }
-
-    .text-area {
-      position: absolute;
-      border: 2px dashed #000;
-      background: rgba(255, 255, 255, 0.7);
-      resize: none;
-      overflow: hidden;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .text-area input {
-      width: 100%;
-      height: 100%;
+    embed {
       border: none;
-      background: transparent;
-      text-align: center;
-      font-size: 14px;
-      font-family: Arial, sans-serif;
-    }
-
-    #pdf-container {
-      position: relative;
       width: 100%;
       height: 600px;
-      overflow: auto;
-      border: 1px solid #ccc;
+      position: relative;
     }
-
-    #pdf-render {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    sl-button {
+    button {
       margin: 10px;
     }
+    .text-field {
+      position: absolute;
+      border: 2px dashed #000;
+      background-color: rgba(255, 255, 255, 0.5);
+      cursor: move;
+    }
+    .handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #000;
+      cursor: pointer;
+    }
+    .handle.top-left {
+      top: -5px;
+      left: -5px;
+    }
+    .handle.top-right {
+      top: -5px;
+      right: -5px;
+    }
+    .handle.bottom-left {
+      bottom: -5px;
+      left: -5px;
+    }
+    .handle.bottom-right {
+      bottom: -5px;
+      right: -5px;
+    }
+    .small-button {
+      padding: 2px;
+      margin: 2px;
+      font-size: 0.8rem;
+      --size: 12px;
+    }
+
+    .small-button sl-icon {
+      --size: 10px;
+    }
+
+    .text-field-container {
+      position: relative;
+    }
+
+    .delete-button-container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 4px; /* Optional: Add padding for spacing */
+    }
+
   `;
 
-  async connectedCallback() {
-    super.connectedCallback();
-    await this.fetchConfiguration();
+  async firstUpdated() {
+    registerIconLibrary('default', {
+      resolver: name => `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.0.0/icons/${name}.svg`
+    });
   }
 
-  async fetchConfiguration() {
+  connectedCallback() {
+    super.connectedCallback();
+    this.fetchPdfConfig();
+  }
+
+  async fetchPdfConfig() {
     try {
       const response = await fetch('/fetch-config', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
-      if (!response.ok) {
-        throw new Error('Eroare la preluarea configurării');
-      }
-      const config = await response.json();
+      if (response.ok) {
+        const { pdf_content, saved_text_boxes } = await response.json();
 
-      this.pdfBlobUrl = config.pdf_content ? `data:application/pdf;base64,${config.pdf_content}` : null;
+        if (pdf_content) {
+          const pdfBytes = Uint8Array.from(atob(pdf_content), c => c.charCodeAt(0));
+          this.pdfDoc = await PDFDocument.load(pdfBytes);
 
-      if (Array.isArray(config.text_areas)) {
-        this.textAreas = config.text_areas;
-        this.textValues = Array(config.text_areas.length).fill('');
+          this.pdfPages = [];
+          for (let i = 0; i < this.pdfDoc.getPageCount(); i++) {
+            const [page] = await this.pdfDoc.copyPages(this.pdfDoc, [i]);
+            this.pdfPages.push(page);
+          }
+
+          this.pageDataUrls = await Promise.all(this.pdfPages.map(async (page) => {
+            const newDocument = await PDFDocument.create();
+            const copiedPage = await newDocument.copyPages(this.pdfDoc!, [this.pdfPages.indexOf(page)]);
+            newDocument.addPage(copiedPage[0]);
+            const pdfBytes = await newDocument.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            return URL.createObjectURL(blob);
+          }));
+
+          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          this.pdfFile = new File([blob], 'fetched.pdf', { type: 'application/pdf' });
+
+          this.currentPageIndex = 0;
+
+          if (saved_text_boxes) {
+            this.savedTextBoxes = saved_text_boxes.map((entry: any) => ({
+              page: entry.page,
+              textBox: {
+                x: entry.textBox.x,
+                y: entry.textBox.y,
+                width: entry.textBox.width,
+                height: entry.textBox.height,
+                text: entry.textBox.text || ''
+              }
+            }));
+          }
+
+          this.requestUpdate();
+
+        } else {
+          console.error('PDF content not found in response data');
+        }
       } else {
-        console.error('Date invalide pentru zonele de text:', config.text_areas);
+        console.error('Failed to fetch PDF configuration:', response.statusText);
       }
-    } catch (err) {
-      console.error('Eroare la preluarea configurării:', err);
-    }
-  }
-
-  saveCompletedPdf() {
-    if (!this.pdfBlobUrl) {
-      console.error('Nu există PDF disponibil pentru a fi salvat completat.');
-      return;
-    }
-
-    try {
-      fetch(this.pdfBlobUrl)
-        .then(res => res.arrayBuffer())
-        .then(async data => {
-
-          const existingPdfBytes = new Uint8Array(data);
-          const pdfDoc = await PDFDocument.load(existingPdfBytes);
-
-          const firstPage = pdfDoc.getPages()[0];
-
-          this.textAreas.forEach((area, index) => {
-            const textValue = this.textValues[index];
-            const fontSize = 14;
-            const { x, y, height } = area;
-
-            firstPage.drawText(textValue, {
-              x,
-              y: firstPage.getHeight() - y - height + fontSize / 2,
-              size: fontSize,
-              color: rgb(0, 0, 0),
-            });
-          });
-
-          const pdfBytes = await pdfDoc.save();
-
-          const file = new Blob([pdfBytes], { type: 'application/pdf' });
-
-          const fileURL = URL.createObjectURL(file);
-
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = fileURL;
-          a.download = 'plan_ingrijiri.pdf';
-          document.body.appendChild(a);
-          a.click();
-
-          URL.revokeObjectURL(fileURL);
-          document.body.removeChild(a);
-        });
     } catch (error) {
-      console.error('Eroare la salvarea PDF completat:', error);
+      console.error('Error fetching PDF configuration:', error);
     }
   }
 
-  handleTextAreaInput(index: number, event: Event) {
-    this.textValues[index] = (event.target as HTMLInputElement).value;
+
+  navigateToPage(index: number) {
+    if (index >= 0 && index < this.pdfPages.length) {
+      this.currentPageIndex = index;
+    }
   }
+
+
+  async handleDownloadPdf() {
+    if (this.pageDataUrls.length === 0) return;
+
+  }
+
+
+  async handleSaveInDatabase(event: Event) {
+    event.preventDefault();
+
+  }
+
 
   render() {
+    const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
+
     return html`
+      <app-header ?enableBack="${true}" .backPath="${'personnel-home'}" .enableTitle="${false}"></app-header>
+
       <main>
-        <h2>Completați Casetele de Text și Vizualizați PDF-ul</h2>
-        <sl-card>
-          ${this.pdfBlobUrl
-            ? html`
-                <div id="pdf-container">
-                  <embed id="pdf-render" src="${this.pdfBlobUrl}" type="application/pdf" />
-                  ${this.textAreas.map(
-                    (area, index) => html`
-                      <div
-                        id="text-area-${index}"
-                        class="text-area"
-                        style="left: ${area.x}px; top: ${area.y}px; width: ${area.width}px; height: ${area.height}px;"
-                      >
-                        <input
-                          type="text"
-                          style="width: 100%; height: 100%; border: none; background: transparent;"
-                          .value="${this.textValues[index]}"
-                          @input="${(e: Event) => this.handleTextAreaInput(index, e)}"
-                        />
-                      </div>
-                    `
-                  )}
-                </div>
-              `
-            : html`<p>Nu există PDF disponibil.</p>`}
-        </sl-card>
-        <sl-button @click="${this.saveCompletedPdf}">Salvați PDF-ul Completat</sl-button>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-left: 10%; padding-top: 6px;">
+          ${this.pageDataUrls.length > 0 ? html`
+            <div style="display: flex; align-items: center; gap: 10px; margin-right: 5%;">
+              <sl-button variant="primary" @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}">
+                <sl-icon name="arrow-left-square-fill"></sl-icon>
+              </sl-button>
+              <sl-button variant="primary" @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}">
+                <sl-icon name="arrow-right-square-fill"></sl-icon>
+              </sl-button>
+            </div>
+            <div style="margin-right: 5%;">
+              <sl-button variant="primary" @click="${this.handleSaveInDatabase}">
+                Salvează configurația <sl-icon name="cloud-plus-fill"></sl-icon>
+              </sl-button>
+            </div>
+            <div style="margin-right: 5%;">
+              <sl-button variant="primary" @click="${this.handleDownloadPdf}">
+                Descarcă pdf <sl-icon name="file-earmark-arrow-down-fill"></sl-icon>
+              </sl-button>
+            </div>
+          ` : ''}
+        </div>
+        <div style="position: relative;">
+              <embed src="${pageDataUrl}#view=FitW" type="application/pdf" style="width: 100%; height: 600px;">
+        </div>
       </main>
     `;
   }
