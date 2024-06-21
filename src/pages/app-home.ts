@@ -91,8 +91,14 @@ export class AppHome extends LitElement {
   async login(event: Event) {
     event.preventDefault();
 
+    let loginEndpoint = '/personnel-login';
+
+    if (this.username.startsWith("admin_")) {
+      loginEndpoint = '/admin-login';
+    }
+
     try {
-      const response = await fetch('/admin-login', {
+      const response = await fetch(loginEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -126,7 +132,11 @@ export class AppHome extends LitElement {
 
       localStorage.setItem('hospitalName', hospitalName);
 
-      router.navigate(resolveRouterPath('admin-home'));
+      if (this.username.startsWith("admin_")) {
+        router.navigate(resolveRouterPath('admin-home'));
+      } else {
+        router.navigate(resolveRouterPath('personnel-home'));
+      }
 
     } catch (error) {
       console.error('Error during login:', error);

@@ -463,7 +463,7 @@ render() {
   const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
 
   return html`
-    <app-header ?enableBack="${true}" backPath="admin-home" .enableTitle="${false}"></app-header>
+    <app-header ?enableBack="${true}" .backPath="${'admin-home'}" .enableTitle="${false}"></app-header>
 
     <main>
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-left:10%; padding-top:6px;">

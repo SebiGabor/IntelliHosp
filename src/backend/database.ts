@@ -117,6 +117,53 @@ app.post('/add-hospital', async (req, res) => {
   }
 });
 
+app.post('/personnel-login', async (req, res) => {
+  const { username, password } = req.body;
+
+  console.log('personnel-login', username, password);
+
+  if (!username || !password) {
+    res.status(400).json({ error: "Username and password are required" });
+    return;
+  }
+
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT "IDspital", "Parola" FROM public.ih_personnel WHERE "Username" = $1', [username]);
+    client.release();
+
+    console.log(result.rows);
+    if (result.rows.length === 0) {
+      console.log(`Username not found: ${username}`);
+      res.status(401).json({ error: "Username not found" });
+      return;
+    }
+
+    const personnel = result.rows[0];
+    if (personnel.Parola !== password) {
+      console.log(`Incorrect password for username: ${username}`);
+      res.status(401).json({ error: "Incorrect password" });
+      return;
+    }
+
+    const clientHosp = await pool.connect();
+    const result2Hosp = await client.query('SELECT "Nume" FROM public.ih_hospitals WHERE "ID" = $1', [personnel.IDspital]);
+    clientHosp.release();
+
+    const hospital = result2Hosp.rows[0];
+
+    loggedInData.setHospitalName(hospital.Nume);
+    loggedInData.setHospitalID(personnel.IDspita);
+
+    res.status(200).json({ hospitalName: hospital.Nume });
+    return;
+  } catch (err: any) {
+    console.error("Error executing query:", (err as Error).message, (err as Error).stack);
+    res.status(500).json({ error: "Internal error", details: (err as Error).message });
+    return;
+  }
+});
+
 app.post('/admin-login', async (req, res) => {
   const { username, password } = req.body;
 

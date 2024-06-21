@@ -7,8 +7,8 @@ import { styles as sharedStyles } from '../styles/shared-styles';
 
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 
-@customElement('admin-personnel')
-export class AdminPersonnel extends LitElement {
+@customElement('personnel-home')
+export class PersonnelHome extends LitElement {
   static styles = [
     sharedStyles,
     styles,
@@ -84,8 +84,6 @@ export class AdminPersonnel extends LitElement {
 
   render() {
     return html`
-      <app-header ?enableBack="${true}" .backPath="${'admin-home'}"></app-header>
-
       <main>
         <div class="header">
           <h2>Personal spital</h2>
