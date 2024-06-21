@@ -9,7 +9,7 @@
   "name": "IntelliHosp",
   "display": "standalone",
   "start_url": "/",
-  "short_name": "IH",
+  "short_name": "IntelliHosp",
   "theme_color": "#3F72AF",
   "description": "IntelliHosp este un PWA pentru gestionarea pacienților din spitale.",
   "orientation": "any",

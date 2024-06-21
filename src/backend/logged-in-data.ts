@@ -1,8 +1,10 @@
 class DataStore {
     hospitalNameLogin: string;
+    hospitalIDLogin: number;
 
     constructor() {
-      this.hospitalNameLogin = "";
+      this.hospitalNameLogin = "IntelliHosp";
+      this.hospitalIDLogin = 0;
     }
 
     setHospitalName(name) {
@@ -11,6 +13,14 @@ class DataStore {
 
     getHospitalName() {
       return this.hospitalNameLogin;
+    }
+
+    setHospitalID(id) {
+      this.hospitalIDLogin = id;
+    }
+
+    getHospitalID() {
+      return this.hospitalIDLogin;
     }
   }
 

@@ -25,7 +25,7 @@ export class AppHome extends LitElement {
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      align-items: center; /* Center the form horizontally */
+      align-items: center;
     }
 
     #loginCard {
@@ -42,23 +42,18 @@ export class AppHome extends LitElement {
       margin-bottom: 16px;
     }
 
-    .icon-button-color sl-icon-button {
-      --icon-color: var(--ih-primary-color-2);
-    }
-
     @media (max-width: 768px) {
       #loginForm {
         max-width: 90%;
       }
-    }
-
-    `
+    }`
   ];
 
   async firstUpdated() {
     registerIconLibrary('default', {
       resolver: name => `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.0.0/icons/${name}.svg`
     });
+    localStorage.setItem('hospitalName', "IntelliHosp");
     console.log('Aceasta este pagina de start a aplicației IntelliHosp!');
   }
 
@@ -97,8 +92,7 @@ export class AppHome extends LitElement {
     event.preventDefault();
 
     try {
-      const response = await fetch('/admin-login', { // Updated URL
-        // Updated URL
+      const response = await fetch('/admin-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -109,13 +103,15 @@ export class AppHome extends LitElement {
         })
       });
 
+      console.log('response', response);
+
       if (!response.ok) {
         if (response.body) {
           const errorData = await response.json();
           if (errorData.error === "Username not found") {
             alert("Username-ul nu a fost găsit!");
           } else if (errorData.error === "Incorrect password") {
-            alert("Parolă incorrectă!");
+            alert("Parolă incorectă!");
           } else {
             alert(`Login failed: ${errorData.error}`);
           }
@@ -128,10 +124,8 @@ export class AppHome extends LitElement {
       const data = await response.json();
       const hospitalName = data.hospitalName;
 
-      // Store the hospital name in local storage
       localStorage.setItem('hospitalName', hospitalName);
 
-      // Redirect to admin home page
       router.navigate(resolveRouterPath('admin-home'));
 
     } catch (error) {

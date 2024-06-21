@@ -1,72 +1,109 @@
 import { LitElement, css, html } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
-import { resolveRouterPath } from '../router';
-
+import { router, resolveRouterPath } from '../router';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
+
 @customElement('app-header')
 export class AppHeader extends LitElement {
-  @property({ type: String }) title = 'IntelliHosp';
+  @property({ type: String }) title = localStorage.getItem('hospitalName') ?? '';
 
-  @property({ type: Boolean}) enableBack: boolean = false;
+  @property({ type: Boolean }) enableBack = false;
+  @property({ type: Boolean }) enableLogOut = false;
+  @property({ type: Boolean }) enableTitle = true;
+  @property({ type: String }) backPath = '';
 
   static styles = css`
     header {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       background: var(--app-color-primary);
       color: white;
-      height: 4em;
-      padding-left: 16px;
-      padding-top: 12px;
-
+      height: auto;
+      padding: 0 16px;
       position: fixed;
-      left: env(titlebar-area-x, 0);
-      top: env(titlebar-area-y, 0);
-      height: env(titlebar-area-height, 50px);
-      width: env(titlebar-area-width, 100%);
+      top: 0;
+      left: 0;
+      right: 0;
       -webkit-app-region: drag;
     }
 
-    header h1 {
-      margin-top: 0;
-      margin-bottom: 0;
+    .title-container {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      padding: 8px;
+    }
+
+    .back-button {
+      margin-right: 8px;
+    }
+
+    .log-out-container {
+      justify-self: end;
+      padding-top: 8px;
+    }
+
+    h1 {
+      margin: 0;
       font-size: 20px;
       font-weight: bold;
+      text-align: center;
+      word-wrap: break-word;
+      white-space: normal;
+      padding-left:5px;
     }
 
-    nav a {
-      margin-left: 10px;
-    }
-
-    #back-button-block {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 12em;
-    }
-
-    @media(prefers-color-scheme: light) {
+    @media (max-width: 600px) {
       header {
-        color: black;
+        padding: 8px;
+        grid-template-columns: auto 1fr auto;
       }
 
-      nav a {
-        color: initial;
+      h1 {
+        font-size: 18px;
+      }
+
+      sl-button::part(base) {
+        font-size: 14px;
+        padding: 0;
+        margin: 0 4px;
+      }
+
+      .log-out-container {
+        padding-top: 4px;
       }
     }
   `;
 
+  logout() {
+    localStorage.clear();
+    sessionStorage.clear();
+
+    fetch('/logout', { method: 'POST' })
+      .then(() => {
+        router.navigate(resolveRouterPath('app-home'));
+        history.pushState(null, document.title, location.href);
+        window.addEventListener('popstate', function () {
+          history.pushState(null, document.title, location.href);
+        });
+      })
+      .catch(err => console.error('Logout failed', err));
+  }
+
   render() {
     return html`
       <header>
-
-        <div id="back-button-block">
-          ${this.enableBack ? html`<sl-button href="${resolveRouterPath()}">
-            Înapoi
-          </sl-button>` : null}
-
-          <h1>${this.title}</h1>
+        <div class="title-container">
+          ${this.enableBack ? html`
+            <sl-button href="${resolveRouterPath(this.backPath)}">Înapoi</sl-button>
+          ` : ''}
+          ${this.enableTitle ? html`<h1>${this.title}</h1>` : ''}
+        </div>
+        <div class="log-out-container">
+          ${this.enableLogOut ? html`
+            <sl-button @click="${this.logout}">Delogare</sl-button>
+          ` : ''}
         </div>
       </header>
     `;

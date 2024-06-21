@@ -24,6 +24,10 @@ export const styles = css`
     color: #960077;
   }
 
+  .icon-button-color sl-icon-button {
+    --icon-color: var(--ih-primary-color-2);
+  }
+
   a[href] {
     margin-top: 16px;
       color: var(--ih-primary-color-2);
