@@ -75,6 +75,28 @@ export class AdminCarePlan extends LitElement {
       bottom: -5px;
       right: -5px;
     }
+    .small-button {
+      padding: 2px;
+      margin: 2px;
+      font-size: 0.8rem;
+      --size: 12px;
+    }
+
+    .small-button sl-icon {
+      --size: 10px;
+    }
+
+    .text-field-container {
+      position: relative;
+    }
+
+    .delete-button-container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 4px; /* Optional: Add padding for spacing */
+    }
+
   `;
 
   async firstUpdated() {
@@ -475,12 +497,15 @@ render() {
             <embed src="${pageDataUrl}#view=Fit&toolbar=0" type="application/pdf" style="width: ${600 * this.pdfPages[this.currentPageIndex].getWidth() / this.pdfPages[this.currentPageIndex].getHeight()}px; height: 600px;">
             ${this.textBoxes.map((box, index) => html`
               <div class="text-field" style="left: ${box.x}px; top: ${box.y}px; width: ${box.width}px; height: ${box.height}px;">
-                Sample text field
                 <div class="handle top-left"></div>
                 <div class="handle top-right"></div>
                 <div class="handle bottom-left"></div>
                 <div class="handle bottom-right"></div>
-                <sl-button variant="danger" @click="${() => this.handleDeleteTextField(index)}">Delete</sl-button>
+                <div class="delete-button-container">
+                  <sl-button variant="danger" size="small" class="small-button" @click="${() => this.handleDeleteTextField(index)}">
+                    <sl-icon name="x-square-fill"></sl-icon>
+                  </sl-button>
+                </div>
               </div>
             `)}
           </div>
