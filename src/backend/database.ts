@@ -216,7 +216,7 @@ app.get('/get-personnel', async (_req, res) => {
 app.get('/get-patients', async (_req, res) => {
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT "Nume", "CNP" FROM public.ih_patients WHERE "IDspital" = $1', [loggedInData.getHospitalID()]);
+    const result = await client.query('SELECT "ID", "Nume", "CNP" FROM public.ih_patients WHERE "IDspital" = $1', [loggedInData.getHospitalID()]);
     client.release();
     res.status(200).json(result.rows);
     return;
@@ -237,14 +237,27 @@ app.post('/personnel-add-patient', async (req, res) => {
 
   try {
     const client = await pool.connect();
-    const insertQuery = 'INSERT INTO public.ih_patients ("IDspital", "Nume", "CNP") VALUES ($1, $2, $3)';
-    const result = await client.query(insertQuery, [loggedInData.getHospitalID(), nume, cnp]);
+
+    const selectQuery = 'SELECT "TextBoxes" FROM public.ih_hospitals WHERE "ID" = $1';
+    const selectResult = await client.query(selectQuery, [loggedInData.getHospitalID()]);
+
+    if (selectResult.rows.length === 0) {
+      throw new Error('No hospital found with the given ID');
+    }
+
+    let textBoxes = {};
+    if (selectResult.rows[0].TextBoxes) {
+      textBoxes = selectResult.rows[0].TextBoxes;
+    }
+
+    const insertQuery = 'INSERT INTO public.ih_patients ("IDspital", "Nume", "CNP", "TextFields") VALUES ($1, $2, $3, $4)';
+    const result = await client.query(insertQuery, [loggedInData.getHospitalID(), nume, cnp, JSON.stringify(textBoxes)]);
     client.release();
 
     res.status(201).json(result.rows[0]);
-  }catch (err: any) {
-    console.error("Error executing query: ", err.message, err.stack);
-    res.status(500).json({ error: "Internal error", details: err.message });
+  } catch (err) {
+    console.error("Error executing query: ", (err as Error).message, (err as Error).stack);
+    res.status(500).json({ error: "Internal error", details: (err as Error).message });
   }
 });
 

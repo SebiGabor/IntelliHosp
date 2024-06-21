@@ -105,7 +105,8 @@ export class PersonnelHome extends LitElement {
     }
   }
 
-  handleButtonClick() {
+  handleButtonClick(ID: any) {
+    localStorage.setItem('selectedPatientId', ID);
     router.navigate(resolveRouterPath('personnel-complete-plan'));
   }
 
@@ -133,7 +134,9 @@ export class PersonnelHome extends LitElement {
                     <td>${person.Nume}</td>
                     <td>${person.CNP}</td>
                     <td>
-                      <sl-button variant="primary" @click=${() => this.handleButtonClick()}><sl-icon name="file-earmark-medical-fill"></sl-icon></sl-button>
+                      <sl-button variant="primary" @click=${() => this.handleButtonClick(person.ID)}>
+                        <sl-icon name="file-earmark-medical-fill"></sl-icon>
+                      </sl-button>
                     </td>
                   </tr>
                 `)}
