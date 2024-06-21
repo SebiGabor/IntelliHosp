@@ -433,13 +433,15 @@ render() {
     <main>
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-left:10%; padding-top:6px;">
         <div style="position: relative; flex: 1; margin-right: 5%;">
-          <input type="file" accept="application/pdf" @change="${this.handleFileUpload}" style="opacity: 0; position: absolute; width: 100%; height: 100%; cursor: pointer;">
-          <sl-button variant="primary">Încarcă pdf <sl-icon name="file-earmark-arrow-up-fill"></sl-icon></sl-button>
+          <input id="fileInput" type="file" accept="application/pdf" @change="${this.handleFileUpload}" style="display: none;">
+          <sl-button variant="primary" @click="${() => this.shadowRoot?.getElementById('fileInput')?.click()}">
+            Încarcă pdf <sl-icon name="file-earmark-arrow-up-fill"></sl-icon>
+          </sl-button>
         </div>
         ${this.pageDataUrls.length > 0 ? html`
           <div style="display: flex; align-items: center; gap: 10px; margin-right: 5%;">
-            <sl-icon-button name="arrow-left-square-fill" label="Pagina anterioară" @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}"></sl-icon-button>
-            <sl-icon-button name="arrow-right-square-fill" label="Pagina următoare" @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}"></sl-icon-button>
+            <sl-button variant="primary" @click="${() => this.navigateToPage(this.currentPageIndex - 1)}" ?disabled="${this.currentPageIndex === 0}"><sl-icon name="arrow-left-square-fill"></sl-icon></sl-button>
+            <sl-button variant="primary" @click="${() => this.navigateToPage(this.currentPageIndex + 1)}" ?disabled="${this.currentPageIndex === this.pdfPages.length - 1}"><sl-icon name="arrow-right-square-fill"></sl-icon></sl-button>
           </div>
           <div style="display: flex; align-items: center; gap: 10px; margin-right: 5%;">
             <sl-button variant="primary" @click="${this.handleTextFieldAdd}">Adaugă câmp <sl-icon name="plus-square-fill"></sl-icon></sl-button>
@@ -472,10 +474,7 @@ render() {
         </div>
       ` : ''}
     </main>
-  `;
-}
-
-
-
+    `;
+  }
 
 }
