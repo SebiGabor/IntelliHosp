@@ -8,7 +8,7 @@ import { styles as sharedStyles } from '../styles/shared-styles';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 
 @customElement('hosp-register-success')
-export class AppAbout extends LitElement {
+export class HospRegSuccess extends LitElement {
   static styles = [
     sharedStyles,
     styles,

@@ -1,8 +1,12 @@
 import { html } from 'lit';
 
-if (!(globalThis as any).URLPattern) {
-  import("urlpattern-polyfill");
+async function ensureURLPattern() {
+  if (!(globalThis as any).URLPattern) {
+    await import("urlpattern-polyfill");
+  }
 }
+
+await ensureURLPattern();
 
 import { Router } from '@thepassle/app-tools/router.js';
 import { lazy } from '@thepassle/app-tools/router/plugins/lazy.js';
