@@ -164,6 +164,10 @@ export class AdminCarePlan extends LitElement {
                 height: entry.textBox.height,
                 text: entry.textBox.text || ''
               },
+              scale: {
+                x: entry.scale.x,
+                y: entry.scale.y
+              },
               confirmed: true
             }));
           }
