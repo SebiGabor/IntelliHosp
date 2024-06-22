@@ -18,7 +18,6 @@ export class AppHeader extends LitElement {
       grid-template-columns: auto 1fr auto;
       align-items: center;
       background: var(--app-color-primary);
-      color: white;
       height: auto;
       padding: 0 16px;
       position: fixed;
