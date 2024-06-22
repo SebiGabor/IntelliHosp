@@ -54,7 +54,7 @@ export class AppHome extends LitElement {
       resolver: name => `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.0.0/icons/${name}.svg`
     });
     localStorage.setItem('hospitalName', "IntelliHosp");
-    console.log('Aceasta este pagina de start a aplicației IntelliHosp!');
+    console.log('IntelliHosp login page loaded!');
   }
 
   render() {
@@ -119,10 +119,10 @@ export class AppHome extends LitElement {
           } else if (errorData.error === "Incorrect password") {
             alert("Parolă incorectă!");
           } else {
-            alert(`Login failed: ${errorData.error}`);
+            alert(`Eroare la login: ${errorData.error}`);
           }
         } else {
-          alert('Login failed: No response from server');
+          alert('Eroare la login: Niciun răspuns de la server!');
         }
         return;
       }

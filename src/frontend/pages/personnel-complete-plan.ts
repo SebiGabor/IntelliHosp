@@ -322,12 +322,12 @@ export class PersonnelCompletePlan extends LitElement {
         console.error('Server Error:', errorData);
         alert(`Eroare la salvarea planului: ${errorData.error}`);
       } else {
-        alert('Eroare la salvarea planului!');
+        alert('Eroare la salvarea planului');
         console.error('Failed to save plan:', response.statusText);
       }
     } catch (error) {
       console.error('Error saving configuration:', error);
-      alert('Eroare la salvarea planului!');
+      alert('Eroare la salvarea planului');
     }
   }
 

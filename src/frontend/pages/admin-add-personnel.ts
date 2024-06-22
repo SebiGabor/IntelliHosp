@@ -103,7 +103,7 @@ async handleSubmit(event: Event) {
           return;
         }
 
-        alert('Personal adăugat cu succes');
+        alert('Personal adăugat cu succes!');
 
         router.navigate(resolveRouterPath('admin-personnel'));
 

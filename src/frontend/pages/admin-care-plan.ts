@@ -167,11 +167,8 @@ export class AdminCarePlan extends LitElement {
               confirmed: true
             }));
           }
-          console.log(this.savedTextBoxes);
 
           this.requestUpdate();
-
-          console.log(this.savedTextBoxes);
 
         } else {
           console.error('PDF content not found in response data');
@@ -486,10 +483,10 @@ export class AdminCarePlan extends LitElement {
       });
 
       if (response.ok) {
-        alert('Configuration saved successfully!');
+        alert('Plan salvat cu succes!');
         this.requestUpdate();
       } else {
-        alert('Failed to save configuration');
+        alert('Eroare la salvarea planului');
       }
     } catch (error) {
       console.error('Error saving configuration:', error);

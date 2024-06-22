@@ -95,11 +95,11 @@ async handleSubmit(event: Event) {
         });
 
         if (!response.ok) {
-          alert('Eroare la adăugarea pacientului');
+          alert('Eroare la adăugarea pacientului!');
           return;
         }
 
-        alert('Pacientul a fost adăugat cu succes');
+        alert('Pacientul a fost adăugat cu succes!');
 
         router.navigate(resolveRouterPath('personnel-home'));
 
