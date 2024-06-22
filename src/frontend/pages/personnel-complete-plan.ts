@@ -24,6 +24,7 @@ export class PersonnelCompletePlan extends LitElement {
   @state() textFieldsConstructed: boolean = false;
   @state() pdfFetched: boolean = false;
   @state() pdfWidth: number = -1;
+  @state() recipientEmail: string = '';
 
   static styles = css`
     input[type="file"] {
@@ -334,6 +335,44 @@ export class PersonnelCompletePlan extends LitElement {
     this.pdfWidth = this.shadowRoot?.querySelector('embed')?.getBoundingClientRect().left || 0;
   }
 
+  async handleSendEmail() {
+    if (this.pageDataUrls.length === 0 || !this.pdfDoc) return;
+
+    try {
+      this.pdfDocCopy = await this.pdfDoc.copy();
+      this.constructTextFields();
+      const finalPdfBytes = await this.pdfDoc.save();
+
+      const response = await fetch('/send-email-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pdfBytes: Array.from(finalPdfBytes),
+          email: this.recipientEmail
+        })
+      });
+
+      if (response.ok) {
+        alert('Email trimis cu success!');
+        this.pdfDoc = await this.pdfDocCopy?.copy();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to send email:', errorData);
+        alert(`Eroare la trimitere email: ${errorData.error}`);
+        this.pdfDoc = await PDFDocument.create();
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert('Eroare la trimitere email');
+    } finally {
+      this.updatePdfURLs();
+      this.requestUpdate();
+    }
+  }
+
+
   render() {
     const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
 
@@ -359,6 +398,12 @@ export class PersonnelCompletePlan extends LitElement {
             <div style="margin-right: 5%;">
               <sl-button variant="primary" @click="${this.handleDownloadPdf}">
                 Descarcă pdf <sl-icon name="file-earmark-arrow-down-fill"></sl-icon>
+              </sl-button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <sl-input placeholder="Adresă de email" type="email" @input="${(e: Event) => this.recipientEmail = (e.target as HTMLInputElement).value}"></sl-input>
+              <sl-button variant="primary" @click="${this.handleSendEmail}" ?disabled="${!this.recipientEmail}">
+                Trimite email <sl-icon name="envelope-fill"></sl-icon>
               </sl-button>
             </div>
           ` : ''}

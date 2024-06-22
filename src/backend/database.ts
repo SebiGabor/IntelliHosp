@@ -412,6 +412,58 @@ app.post('/update-patient-plan', async (req, res) => {
   }
 });
 
+app.post('/send-email-plan', async (req, res) => {
+  try {
+    const { pdfBytes, email } = req.body;
+
+    if (!pdfBytes || !Array.isArray(pdfBytes)) {
+      return res.status(400).json({ error: 'pdfBytes is required and must be an array' });
+    }
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email address is required' });
+    }
+
+    const pdfContent = Buffer.from(pdfBytes);
+
+    const clientHosp = await pool.connect();
+    const result2Hosp = await clientHosp.query('SELECT "Nume" FROM public.ih_hospitals WHERE "ID" = $1', [loggedInData.getHospitalID()]);
+    clientHosp.release();
+
+    const hospital = result2Hosp.rows[0];
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Plan de îngrijiri - IntelliHosp',
+      text: `În fișierul atașat găsiți planul de îngrijiri eliberat de ${hospital.Nume}!\n\nVă dorim multă sănătate!`,
+      attachments: [
+        {
+          filename: 'plan_ingrijiri.pdf',
+          content: pdfContent,
+          encoding: 'base64'
+        }
+      ]
+    };
+
+    transporter.sendMail(mailOptions, (error: any, info: { response: string; }) => {
+      if (error) {
+        console.error(error);
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
+    });
+
+    res.sendStatus(200);
+    return;
+
+  } catch (error) {
+    console.error('Error sending email with the plan:', error);
+    res.sendStatus(500);
+    return;
+  }
+});
+
 
 
 

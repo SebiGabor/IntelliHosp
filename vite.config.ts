@@ -19,6 +19,7 @@ export default defineConfig({
       '/get-patients': 'http://localhost:3000',
       '/update-patient-plan': 'http://localhost:3000',
       '/fetch-patient-plan': 'http://localhost:3000',
+      '/send-email-plan': 'http://localhost:3000',
     },
   },
   preview: {
@@ -35,6 +36,7 @@ export default defineConfig({
       '/get-patients': 'http://localhost:3000',
       '/update-patient-plan': 'http://localhost:3000',
       '/fetch-patient-plan': 'http://localhost:3000',
+      '/send-email-plan': 'http://localhost:3000',
     },
   },
   build: {
