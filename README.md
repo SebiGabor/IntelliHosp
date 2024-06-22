@@ -13,5 +13,6 @@ Asigurați-vă că aveți instalat Node.js în prealabil. Node.js se poate desc�
 După ce ați instalat Node.js și ați clonat acest repository, în directorul proiectului executați următoarele comenzi în terminal:
 
 ```bash
-npm run install
+npm install typescript
+npm run build
 npm start

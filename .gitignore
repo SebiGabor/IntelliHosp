@@ -7,9 +7,5 @@ types
 .idea
 .github
 
-.env
-.env*
-.flaskenv*
-!.env.project
-!.env.vault
+
 test/coverage
