@@ -338,6 +338,7 @@ export class PersonnelCompletePlan extends LitElement {
     if (textBox) {
       textBox.textBox.text = input.value;
     }
+    this.requestUpdate();
   }
 
   getPdfWidth() {
