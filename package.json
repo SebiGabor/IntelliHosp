@@ -64,6 +64,7 @@
     "sinon": "^18.0.0",
     "sinon-chai": "^3.7.0",
     "typeorm": "^0.3.20",
+    "typescript": "^5.5.2",
     "urlpattern-polyfill": "^7.0.0",
     "workbox-build": "^6.5.2",
     "workbox-core": "^6.5.2",
@@ -87,7 +88,6 @@
     "mocha": "^10.4.0",
     "open": "^10.1.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5",
     "vite": "^4.5.3",
     "vite-plugin-pwa": "^0.14.7",
     "vitest": "^1.6.0"
