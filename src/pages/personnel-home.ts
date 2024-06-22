@@ -112,6 +112,8 @@ export class PersonnelHome extends LitElement {
 
   render() {
     return html`
+      <app-header ?enableLogOut="${true}"></app-header>
+
       <main>
         <div class="header">
           <h2>Pacienți spital</h2>
