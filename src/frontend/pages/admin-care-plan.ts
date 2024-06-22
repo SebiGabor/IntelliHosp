@@ -101,7 +101,7 @@ export class AdminCarePlan extends LitElement {
       position: absolute;
       top: 0;
       right: 0;
-      padding: 4px; /* Optional: Add padding for spacing */
+      padding: 4px;
     }
 
   `;

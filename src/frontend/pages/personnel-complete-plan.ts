@@ -6,7 +6,6 @@ import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import { registerIconLibrary } from '@shoelace-style/shoelace/dist/utilities/icon-library.js';
-//import { text } from 'body-parser';
 
 @customElement('personnel-complete-plan')
 export class PersonnelCompletePlan extends LitElement {
@@ -99,7 +98,7 @@ export class PersonnelCompletePlan extends LitElement {
       position: absolute;
       top: 0;
       right: 0;
-      padding: 4px; /* Optional: Add padding for spacing */
+      padding: 4px;
     }
   `;
 
