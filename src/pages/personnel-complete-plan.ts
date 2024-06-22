@@ -86,14 +86,12 @@ export class PersonnelCompletePlan extends LitElement {
       right: 0;
       padding: 4px; /* Optional: Add padding for spacing */
     }
-
   `;
 
   async firstUpdated() {
     registerIconLibrary('default', {
       resolver: name => `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.0.0/icons/${name}.svg`
     });
-    alert(localStorage.getItem('selectedPatientId'));
   }
 
   connectedCallback() {
@@ -103,7 +101,7 @@ export class PersonnelCompletePlan extends LitElement {
 
   async fetchPdfConfig() {
     try {
-      const response = await fetch('/fetch-config', {
+      const response = await fetch('/fetch-patient-paln', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -228,6 +226,8 @@ export class PersonnelCompletePlan extends LitElement {
   async handleDownloadPdf() {
     if (this.pageDataUrls.length === 0 || !this.pdfDoc) return;
 
+    this.updateTextFields();
+
     const finalPdfBytes = await this.pdfDoc.save();
     const finalBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
 
@@ -235,15 +235,48 @@ export class PersonnelCompletePlan extends LitElement {
     downloadLink.href = URL.createObjectURL(finalBlob);
     downloadLink.download = 'modified_combined_pdf.pdf';
     downloadLink.click();
-
-    //this.updateTextFields();
   }
 
   async handleSaveInDatabase(event: Event) {
     event.preventDefault();
-
     this.updateTextFields();
+    try {
+      const selectedPatientId = localStorage.getItem('selectedPatientId');
+      if (!selectedPatientId) {
+        throw new Error('selectedPatientId is missing in localStorage');
+      }
+
+      const response = await fetch('/update-patient-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          patientID: selectedPatientId,
+          textBoxes: this.savedTextBoxes
+        })
+      });
+
+      if (response.ok) {
+        alert('Planul a fost salvat cu succes!');
+        this.requestUpdate();
+      } else if (response.status === 400) {
+        // Handle bad request errors (e.g., validation errors)
+        const errorData = await response.json();
+        alert(`Eroare la salvarea planului: ${errorData.error}`);
+      } else {
+        // Handle other server-side errors
+        alert('Eroare la salvarea planului!');
+        console.error('Failed to save plan:', response.statusText);
+      }
+    } catch (error) {
+      // Handle network errors or other exceptions
+      console.error('Error saving configuration:', error);
+      alert('Eroare la salvarea planului!');
+    }
   }
+
+
 
   async updateTextFields() {
     if (this.pdfDoc && this.savedTextBoxes.length > 0) {

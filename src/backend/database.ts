@@ -364,6 +364,49 @@ app.post('/fetch-config', async (_req, res) => {
   }
 });
 
+app.post('/fetch-patient-paln', async(_req, res) => {
+  try {
+    const query = 'SELECT encode("PDF", \'base64\') as pdf_content FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
+    const result = await pool.query(query, [loggedInData.getHospitalID()]);
+
+    const query2 = 'SELECT "TextFields" FROM public.ih_patients WHERE "IDspital" = $1';
+    const result2 = await pool.query(query2, [loggedInData.getHospitalID()]);
+
+    if (result.rows.length > 0 && result2.rows.length > 0) {
+      const pdf_content = result.rows[0].pdf_content;
+      const saved_text_boxes = result2.rows[0].TextFields;
+
+      res.json({ pdf_content, saved_text_boxes });
+    } else {
+      res.status(404).json({ error: 'Configuration not found' });
+    }
+  } catch (err) {
+    console.error('Error fetching configuration:', err);
+    res.sendStatus(500);
+  }
+});
+
+
+app.post('/update-patient-plan', async (req, res) => {
+  try {
+    const { patientID, textBoxes } = req.body;
+
+    if (!patientID || !textBoxes) {
+      return res.status(400).json({ error: 'patientID and textBoxes are required' });
+    }
+
+    const query = 'UPDATE public.ih_patients SET "TextFields" = $1 WHERE "ID" = $2';
+    await pool.query(query, [JSON.stringify(textBoxes), patientID]);
+
+    res.sendStatus(200);
+    return;
+  } catch (error) {
+    console.error('Error updating patient plan:', error);
+    res.sendStatus(500);
+    return;
+  }
+});
+
 
 
 
