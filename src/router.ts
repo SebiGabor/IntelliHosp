@@ -82,6 +82,22 @@ export const router = new Router({
       ],
       render: () => html`<personnel-complete-plan></personnel-complete-plan>`
     },
+    {
+      path: resolveRouterPath('personnel-home'),
+      title: 'Personal medical',
+      plugins: [
+        lazy(() => import('./pages/personnel-home.js')),
+      ],
+      render: () => html`<personnel-home></personnel-home>`
+    },
+    {
+      path: resolveRouterPath('personnel-add-patient'),
+      title: 'Adaugă pacient',
+      plugins: [
+        lazy(() => import('./pages/personnel-add-patient.js')),
+      ],
+      render: () => html`<personnel-add-patient></personnel-add-patient>`
+    },
   ]
 }) ?? new Router();
 

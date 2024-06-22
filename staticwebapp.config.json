@@ -9,12 +9,24 @@
             "allowedRoles": ["anonymous"]
         },
         {
+            "route": "/personnel-login",
+            "allowedRoles": ["anonymous"]
+        },
+        {
             "route": "/get-personnel",
             "allowedRoles": ["anonymous"]
         },
         {
             "route": "/admin-add-personnel",
-            "allowedRoles": ["admin"]
+            "allowedRoles": ["anonymous"]
+        },
+        {
+            "route": "/personnel-add-patient",
+            "allowedRoles": ["anonymous"]
+        },
+        {
+            "route": "/get-patients",
+            "allowedRoles": ["anonymous"]
         }
     ],
     "globalHeaders": {

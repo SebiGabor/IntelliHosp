@@ -9,28 +9,28 @@ import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 
-@customElement('admin-add-personnel')
-export class AdminAddPersonnel extends LitElement {
+@customElement('personnel-add-patient')
+export class PersonnelAddPatient extends LitElement {
   static styles = [
     sharedStyles,
     styles,
     css`
       :host {
         display: block;
-        margin: auto; /* Center the component horizontally */
-        max-width: 800px; /* Set maximum width for responsiveness */
+        margin: auto;
+        max-width: 800px;
       }
 
       main {
         display: flex;
         flex-direction: column;
-        align-items: center; /* Center its children horizontally */
-        padding: 20px; /* Add padding for spacing */
+        align-items: center;
+        padding: 20px;
       }
 
       sl-card {
-        width: 100%; /* Make the card responsive */
-        max-width: 600px; /* Set maximum width for responsiveness */
+        width: 100%;
+        max-width: 600px;
       }
 
       form {
@@ -60,18 +60,16 @@ export class AdminAddPersonnel extends LitElement {
 
   render() {
     return html`
-      <app-header ?enableBack="${true}" .backPath="${'admin-personnel'}"></app-header>
+      <app-header ?enableBack="${true}" .backPath="${'personnel-home'}"></app-header>
 
       <main>
-        <h2>Adaugă personal spital</h2>
+        <h2>Adaugă un pacient nou</h2>
 
         <sl-card>
           <form @submit=${this.handleSubmit}>
-            <sl-input label="Calificare" name="calificare" required></sl-input>
-            <sl-input label="Prenume" name="prenume" required></sl-input>
             <sl-input label="Nume" name="nume" required></sl-input>
-            <sl-input label="Email" name="email" type="email" required></sl-input>
-            <sl-button variant="primary" type="submit">Adaugă personal</sl-button>
+            <sl-input label="CNP" name="cnp" required></sl-input>
+            <sl-button variant="primary" type="submit">Adaugă pacient</sl-button>
           </form>
         </sl-card>
       </main>
@@ -85,27 +83,25 @@ async handleSubmit(event: Event) {
         const formData = new FormData(event.target as HTMLFormElement);
         const formDataObject = Object.fromEntries(formData.entries());
 
-        const response = await fetch('/admin-add-personnel', {
+        const response = await fetch('/personnel-add-patient', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            calificare: formDataObject.calificare,
             nume: formDataObject.nume,
-            prenume: formDataObject.prenume,
-            email: formDataObject.email
+            cnp: formDataObject.cnp
           })
         });
 
         if (!response.ok) {
-          alert('Eroare la adăugarea personalului');
+          alert('Eroare la adăugarea pacientului');
           return;
         }
 
-        alert('Personal adăugat cu succes');
+        alert('Pacientul a fost adăugat cu succes');
 
-        router.navigate(resolveRouterPath('admin-personnel'));
+        router.navigate(resolveRouterPath('personnel-home'));
 
       } catch (error) {
         console.error('Error during login:', error);

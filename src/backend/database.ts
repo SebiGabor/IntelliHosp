@@ -117,6 +117,50 @@ app.post('/add-hospital', async (req, res) => {
   }
 });
 
+app.post('/personnel-login', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    res.status(400).json({ error: "Username and password are required" });
+    return;
+  }
+
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT "IDspital", "Parola" FROM public.ih_personnel WHERE "Username" = $1', [username]);
+    client.release();
+
+    if (result.rows.length === 0) {
+      console.log(`Username not found: ${username}`);
+      res.status(401).json({ error: "Username not found" });
+      return;
+    }
+
+    const personnel = result.rows[0];
+    if (personnel.Parola !== password) {
+      console.log(`Incorrect password for username: ${username}`);
+      res.status(401).json({ error: "Incorrect password" });
+      return;
+    }
+
+    const clientHosp = await pool.connect();
+    const result2Hosp = await client.query('SELECT "Nume" FROM public.ih_hospitals WHERE "ID" = $1', [personnel.IDspital]);
+    clientHosp.release();
+
+    const hospital = result2Hosp.rows[0];
+
+    loggedInData.setHospitalName(hospital.Nume);
+    loggedInData.setHospitalID(personnel.IDspital);
+
+    res.status(200).json({ hospitalName: hospital.Nume });
+    return;
+  } catch (err: any) {
+    console.error("Error executing query:", (err as Error).message, (err as Error).stack);
+    res.status(500).json({ error: "Internal error", details: (err as Error).message });
+    return;
+  }
+});
+
 app.post('/admin-login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -166,6 +210,54 @@ app.get('/get-personnel', async (_req, res) => {
     console.error('Error fetching personnel data:', err.message);
     res.status(500).json({ error: 'Internal Server Error', details: err.message });
     return;
+  }
+});
+
+app.get('/get-patients', async (_req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT "ID", "Nume", "CNP" FROM public.ih_patients WHERE "IDspital" = $1', [loggedInData.getHospitalID()]);
+    client.release();
+    res.status(200).json(result.rows);
+    return;
+  } catch (err: any) {
+    console.error('Error fetching personnel data:', err.message);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    return;
+  }
+});
+
+app.post('/personnel-add-patient', async (req, res) => {
+  const { nume, cnp } = req.body;
+
+  if (!nume || !cnp) {
+    res.status(400).json({ error: "All fields are required" });
+    return;
+  }
+
+  try {
+    const client = await pool.connect();
+
+    const selectQuery = 'SELECT "TextBoxes" FROM public.ih_hospitals WHERE "ID" = $1';
+    const selectResult = await client.query(selectQuery, [loggedInData.getHospitalID()]);
+
+    if (selectResult.rows.length === 0) {
+      throw new Error('No hospital found with the given ID');
+    }
+
+    let textBoxes = {};
+    if (selectResult.rows[0].TextBoxes) {
+      textBoxes = selectResult.rows[0].TextBoxes;
+    }
+
+    const insertQuery = 'INSERT INTO public.ih_patients ("IDspital", "Nume", "CNP", "TextFields") VALUES ($1, $2, $3, $4)';
+    const result = await client.query(insertQuery, [loggedInData.getHospitalID(), nume, cnp, JSON.stringify(textBoxes)]);
+    client.release();
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("Error executing query: ", (err as Error).message, (err as Error).stack);
+    res.status(500).json({ error: "Internal error", details: (err as Error).message });
   }
 });
 
@@ -230,17 +322,24 @@ app.post('/admin-add-personnel', async (req, res) => {
 
 app.post('/save-config', upload.single('pdfFile'), async (req, res) => {
   try {
-    const { pdfBytes } = req.body;
+    const { pdfBytes, textBoxes } = req.body;
 
     if (!pdfBytes || !Array.isArray(pdfBytes)) {
       return res.status(400).json({ error: 'pdfBytes is required and must be an array' });
     }
+    if (!textBoxes || !Array.isArray(textBoxes)) {
+      return res.status(400).json({ error: 'textBoxes is required and must be an array' });
+    }
 
     const hospitalID = loggedInData.getHospitalID();
     const pdfContent = Buffer.from(pdfBytes);
+    const textBoxesJson = JSON.stringify(textBoxes);
 
-    const query = 'UPDATE public.ih_hospitals SET "PDF" = $1 WHERE "ID" = $2';
-    await pool.query(query, [pdfContent, hospitalID]);
+    const query = 'UPDATE public.ih_hospitals SET "PDF" = $1, "TextBoxes" = $2 WHERE "ID" = $3';
+    await pool.query(query, [pdfContent, textBoxesJson, hospitalID]);
+
+    const updatePatientsQuery = 'UPDATE public.ih_patients SET "TextFields" = $1 WHERE "IDspital" = $2';
+    await pool.query(updatePatientsQuery, [textBoxesJson, hospitalID]);
 
     res.sendStatus(200);
     return;
@@ -253,12 +352,12 @@ app.post('/save-config', upload.single('pdfFile'), async (req, res) => {
 
 app.post('/fetch-config', async (_req, res) => {
   try {
-    const query = 'SELECT encode("PDF", \'base64\') as pdf_content FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
+    const query = 'SELECT encode("PDF", \'base64\') as pdf_content, "TextBoxes" as saved_text_boxes FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
     const result = await pool.query(query, [loggedInData.getHospitalID()]);
 
     if (result.rows.length > 0) {
-      const { pdf_content } = result.rows[0];
-      res.json({ pdf_content });
+      const { pdf_content, saved_text_boxes } = result.rows[0];
+      res.json({ pdf_content, saved_text_boxes });
     } else {
       res.status(404).json({ error: 'Configuration not found' });
     }
@@ -267,6 +366,52 @@ app.post('/fetch-config', async (_req, res) => {
     res.sendStatus(500);
   }
 });
+
+app.post('/fetch-patient-plan', async(req, res) => {
+  try {
+    const patientID = req.body.patientID;
+
+    const query = 'SELECT encode("PDF", \'base64\') as pdf_content FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
+    const result = await pool.query(query, [loggedInData.getHospitalID()]);
+
+    const query2 = 'SELECT "TextFields" FROM public.ih_patients WHERE "ID" = $1';
+    const result2 = await pool.query(query2, [patientID]);
+
+    if (result.rows.length > 0 && result2.rows.length > 0) {
+      const pdf_content = result.rows[0].pdf_content;
+      const saved_text_boxes = result2.rows[0].TextFields;
+
+      res.json({ pdf_content, saved_text_boxes });
+    } else {
+      res.status(404).json({ error: 'Configuration not found' });
+    }
+  } catch (err) {
+    console.error('Error fetching configuration:', err);
+    res.sendStatus(500);
+  }
+});
+
+
+app.post('/update-patient-plan', async (req, res) => {
+  try {
+    const { patientID, textBoxes } = req.body;
+
+    if (!patientID || !textBoxes) {
+      return res.status(400).json({ error: 'patientID and textBoxes are required' });
+    }
+
+    const query = 'UPDATE public.ih_patients SET "TextFields" = $1 WHERE "ID" = $2';
+    await pool.query(query, [JSON.stringify(textBoxes), patientID]);
+
+    res.sendStatus(200);
+    return;
+  } catch (error) {
+    console.error('Error updating patient plan:', error);
+    res.sendStatus(500);
+    return;
+  }
+});
+
 
 
 
