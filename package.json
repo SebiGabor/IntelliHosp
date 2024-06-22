@@ -47,6 +47,7 @@
     "nodemailer": "^6.9.13",
     "parse5": "^7.1.2",
     "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
     "pdf.js": "^0.1.0",
     "pdfjs-dist": "^4.3.136",
     "pdfkit": "^0.15.0",

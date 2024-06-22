@@ -364,7 +364,7 @@ app.post('/fetch-config', async (_req, res) => {
   }
 });
 
-app.post('/fetch-patient-paln', async(_req, res) => {
+app.post('/fetch-patient-plan', async(_req, res) => {
   try {
     const query = 'SELECT encode("PDF", \'base64\') as pdf_content FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
     const result = await pool.query(query, [loggedInData.getHospitalID()]);

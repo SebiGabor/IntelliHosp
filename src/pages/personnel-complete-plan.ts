@@ -1,11 +1,12 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { PDFDocument, PDFPage, PDFTextField, rgb } from 'pdf-lib';
+import { PDFDocument, PDFPage, rgb } from 'pdf-lib';
 
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import { registerIconLibrary } from '@shoelace-style/shoelace/dist/utilities/icon-library.js';
+//import { text } from 'body-parser';
 
 @customElement('personnel-complete-plan')
 export class PersonnelCompletePlan extends LitElement {
@@ -22,17 +23,29 @@ export class PersonnelCompletePlan extends LitElement {
   @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | undefined }; scale: {x: number; y: number; pdfHeight: number} }> = [];
   @state() textFieldsConstructed: boolean = false;
   @state() pdfFetched: boolean = false;
+  @state() pdfWidth: number = -1;
 
   static styles = css`
     input[type="file"] {
       margin: 20px 0;
     }
-    embed {
-      border: none;
+    .pdf-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
       width: 100%;
       height: 600px;
-      position: relative;
+      overflow: auto;
+      border: 1px solid #000;
+      margin: 0 auto;
     }
+
+    embed {
+      width: auto;
+      max-height: 100%;
+    }
+
     button {
       margin: 10px;
     }
@@ -77,7 +90,9 @@ export class PersonnelCompletePlan extends LitElement {
     }
 
     .text-field-container {
-      position: relative;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
 
     .delete-button-container {
@@ -101,7 +116,7 @@ export class PersonnelCompletePlan extends LitElement {
 
   async fetchPdfConfig() {
     try {
-      const response = await fetch('/fetch-patient-paln', {
+      const response = await fetch('/fetch-patient-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -173,7 +188,7 @@ export class PersonnelCompletePlan extends LitElement {
     }));
 }
 
-  async constructTextFields() {
+  constructTextFields() {
     if (!this.pdfDoc) return;
 
     const pdfElement = this.shadowRoot?.querySelector('embed');
@@ -205,16 +220,22 @@ export class PersonnelCompletePlan extends LitElement {
     this.textFieldsConstructed = true;
 
     this.updatePdfURLs();
-
-    this.requestUpdate();
   }
 
-  updated(changedProperties: Map<string | number | symbol, unknown>) {
-    super.updated(changedProperties);
+  destructTextFields() {
+    if (!this.pdfDoc) return;
 
-    if (this.pdfFetched && !this.textFieldsConstructed) {
-      this.constructTextFields();
+    const form = this.pdfDoc.getForm();
+
+    for (let i = 0; i < this.pdfDoc.getPageCount() || 0; i++) {
+      this.savedTextBoxes.forEach((iterator) => {
+        if (iterator.page == i) {
+          form.removeField(form.getField(iterator.textBox.fieldId));
+        }
+      });
     }
+
+    this.updatePdfURLs();
   }
 
   navigateToPage(index: number) {
@@ -226,7 +247,7 @@ export class PersonnelCompletePlan extends LitElement {
   async handleDownloadPdf() {
     if (this.pageDataUrls.length === 0 || !this.pdfDoc) return;
 
-    this.updateTextFields();
+    this.constructTextFields();
 
     const finalPdfBytes = await this.pdfDoc.save();
     const finalBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
@@ -235,69 +256,87 @@ export class PersonnelCompletePlan extends LitElement {
     downloadLink.href = URL.createObjectURL(finalBlob);
     downloadLink.download = 'modified_combined_pdf.pdf';
     downloadLink.click();
+
+    this.destructTextFields();
+    this.requestUpdate();
+  }
+
+  updated(changedProperties: Map<string | number | symbol, unknown>) {
+    super.updated(changedProperties);
+
+    if (this.pdfFetched && this.pdfWidth === -1) {
+      this.getPdfWidth();
+    }
   }
 
   async handleSaveInDatabase(event: Event) {
     event.preventDefault();
-    this.updateTextFields();
+
     try {
       const selectedPatientId = localStorage.getItem('selectedPatientId');
       if (!selectedPatientId) {
         throw new Error('selectedPatientId is missing in localStorage');
       }
 
+      const requestBody = {
+        patientID: selectedPatientId,
+        textBoxes: this.savedTextBoxes.map(tb => ({
+          page: tb.page,
+          textBox: {
+            fieldId: tb.textBox.fieldId,
+            x: tb.textBox.x,
+            y: tb.textBox.y,
+            width: tb.textBox.width,
+            height: tb.textBox.height,
+            text: tb.textBox.text || '',
+          },
+          scale: {
+            x: tb.scale.x,
+            y: tb.scale.y
+          }
+        })),
+      };
+
+      console.log('Sending request with body:', requestBody);
+
       const response = await fetch('/update-patient-plan', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          patientID: selectedPatientId,
-          textBoxes: this.savedTextBoxes
-        })
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
-        alert('Planul a fost salvat cu succes!');
-        this.requestUpdate();
+        alert('Plan salvat cu succes!');
       } else if (response.status === 400) {
-        // Handle bad request errors (e.g., validation errors)
         const errorData = await response.json();
+        console.error('Bad Request:', errorData);
+        alert(`Eroare la salvarea planului: ${errorData.error}`);
+      } else if (response.status === 500) {
+        const errorData = await response.json();
+        console.error('Server Error:', errorData);
         alert(`Eroare la salvarea planului: ${errorData.error}`);
       } else {
-        // Handle other server-side errors
         alert('Eroare la salvarea planului!');
         console.error('Failed to save plan:', response.statusText);
       }
     } catch (error) {
-      // Handle network errors or other exceptions
       console.error('Error saving configuration:', error);
       alert('Eroare la salvarea planului!');
     }
   }
 
-
-
-  async updateTextFields() {
-    if (this.pdfDoc && this.savedTextBoxes.length > 0) {
-      const form = this.pdfDoc.getForm();
-
-      if (!form) {
-        console.warn('No form found in the PDF document.');
-        return;
-      }
-
-      for (const savedTextBox of this.savedTextBoxes) {
-        const { page, textBox } = savedTextBox;
-        if (page !== this.currentPageIndex) continue;
-
-        const fieldId = textBox.fieldId;
-        const text = textBox.text;
-
-        const field = form.getField(fieldId) as PDFTextField | undefined;
-        field?.setText(text || '');
-      }
+  handleTextInput(event: Event, fieldId: string) {
+    const input = event.target as HTMLInputElement;
+    const textBox = this.savedTextBoxes.find(tb => tb.textBox.fieldId === fieldId);
+    if (textBox) {
+      textBox.textBox.text = input.value;
     }
+  }
+
+  getPdfWidth() {
+    this.pdfWidth = this.shadowRoot?.querySelector('embed')?.getBoundingClientRect().left || 0;
   }
 
   render() {
@@ -329,10 +368,41 @@ export class PersonnelCompletePlan extends LitElement {
             </div>
           ` : ''}
         </div>
-        <div style="position: relative;">
-            <embed src="${pageDataUrl}#view=FitW" type="application/pdf" style="width: 100%; height: 600px;">
+        <div style="display: flex; justify-content: center; position: relative;">
+          <div class="pdf-container">
+            <embed src="${pageDataUrl}#view=Fit&toolbar=0" style="width: ${600 * this.pdfPages[this.currentPageIndex].getWidth() / this.pdfPages[this.currentPageIndex].getHeight()}px; height: 600px;" type="application/pdf">
+            <div class="text-field-container">
+              ${this.savedTextBoxes
+                .filter(tb => tb.page === this.currentPageIndex)
+                .map(tb => html`
+                  <div
+                    class="text-field"
+                    style="
+                      position: absolute;
+                      left: ${tb.textBox.x + this.pdfWidth}px;
+                      top: ${(tb.textBox.y)}px;
+                      width: ${tb.textBox.width}px;
+                      height: ${tb.textBox.height}px;
+                    "
+                  >
+                    <input
+                      type="text"
+                      .value="${tb.textBox.text || ''}"
+                      @input="${(e: Event) => this.handleTextInput(e, tb.textBox.fieldId)}"
+                      style="
+                        width: 100%;
+                        height: 100%;
+                        border: none;
+                        background: transparent;
+                      "
+                    />
+                  </div>
+                `)}
+            </div>
+          </div>
         </div>
       </main>
     `;
   }
+
 }

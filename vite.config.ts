@@ -18,7 +18,7 @@ export default defineConfig({
       '/personnel-add-patient': 'http://localhost:3000',
       '/get-patients': 'http://localhost:3000',
       '/update-patient-plan': 'http://localhost:3000',
-      '/fetch-patient-paln': 'http://localhost:3000',
+      '/fetch-patient-plan': 'http://localhost:3000',
     },
   },
   preview: {
@@ -34,7 +34,7 @@ export default defineConfig({
       '/personnel-add-patient': 'http://localhost:3000',
       '/get-patients': 'http://localhost:3000',
       '/update-patient-plan': 'http://localhost:3000',
-      '/fetch-patient-paln': 'http://localhost:3000',
+      '/fetch-patient-plan': 'http://localhost:3000',
     },
   },
   build: {
