@@ -338,6 +338,9 @@ app.post('/save-config', upload.single('pdfFile'), async (req, res) => {
     const query = 'UPDATE public.ih_hospitals SET "PDF" = $1, "TextBoxes" = $2 WHERE "ID" = $3';
     await pool.query(query, [pdfContent, textBoxesJson, hospitalID]);
 
+    const updatePatientsQuery = 'UPDATE public.ih_patients SET "TextFields" = $1 WHERE "IDspital" = $2';
+    await pool.query(updatePatientsQuery, [textBoxesJson, hospitalID]);
+
     res.sendStatus(200);
     return;
   } catch (error) {

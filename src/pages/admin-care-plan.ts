@@ -242,7 +242,7 @@ export class AdminCarePlan extends LitElement {
     this.pdfHeight = pdfRect?.height || 1;
 
     this.textBoxes.forEach((box, index) => {
-      const page = pdfDoc.getPage(index);
+      const page = this.pdfPages[this.currentPageIndex];
 
       const scaleX = page.getWidth() / pdfWidth;
       const scaleY = page.getHeight() / this.pdfHeight;

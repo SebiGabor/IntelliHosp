@@ -20,7 +20,7 @@ export class PersonnelCompletePlan extends LitElement {
   @state() textFieldWidth: number = 200;
   @state() textFieldHeight: number = 20;
   @state() textBoxes: Array<{ x: number; y: number; width: number; height: number }> = [];
-  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | undefined }; scale: {x: number; y: number; pdfHeight: number} }> = [];
+  @state() savedTextBoxes: Array<{ page: number; textBox: { fieldId: string, x: number; y: number; width: number; height: number; text: string | undefined }; scale: {x: number; y: number} }> = [];
   @state() textFieldsConstructed: boolean = false;
   @state() pdfFetched: boolean = false;
   @state() pdfWidth: number = -1;
@@ -149,8 +149,7 @@ export class PersonnelCompletePlan extends LitElement {
               },
               scale: {
                 x: entry.scale.x,
-                y: entry.scale.y,
-                pdfHeight: entry.pdfHeight
+                y: entry.scale.y
               }
             }));
           }
