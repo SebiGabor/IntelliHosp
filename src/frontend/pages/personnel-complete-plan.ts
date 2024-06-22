@@ -11,6 +11,7 @@ import { registerIconLibrary } from '@shoelace-style/shoelace/dist/utilities/ico
 export class PersonnelCompletePlan extends LitElement {
   @state() pdfFile: File | null = null;
   @state() pdfDoc: PDFDocument | null = null;
+  @state() pdfDocCopy: PDFDocument | null = null;
   @state() pdfPages: PDFPage[] = [];
   @state() currentPageIndex: number = 0;
   @state() pageDataUrls: string[] = [];
@@ -220,23 +221,9 @@ export class PersonnelCompletePlan extends LitElement {
         }
       });
     }
+
+    form.flatten();
     this.textFieldsConstructed = true;
-
-    this.updatePdfURLs();
-  }
-
-  destructTextFields() {
-    if (!this.pdfDoc) return;
-
-    const form = this.pdfDoc.getForm();
-
-    for (let i = 0; i < this.pdfDoc.getPageCount() || 0; i++) {
-      this.savedTextBoxes.forEach((iterator) => {
-        if (iterator.page == i) {
-          form.removeField(form.getField(iterator.textBox.fieldId));
-        }
-      });
-    }
 
     this.updatePdfURLs();
   }
@@ -251,6 +238,8 @@ export class PersonnelCompletePlan extends LitElement {
   async handleDownloadPdf() {
     if (this.pageDataUrls.length === 0 || !this.pdfDoc) return;
 
+    this.pdfDocCopy = await this.pdfDoc.copy();
+
     this.constructTextFields();
 
     const finalPdfBytes = await this.pdfDoc.save();
@@ -261,7 +250,8 @@ export class PersonnelCompletePlan extends LitElement {
     downloadLink.download = 'modified_combined_pdf.pdf';
     downloadLink.click();
 
-    this.destructTextFields();
+    this.pdfDoc = await this.pdfDocCopy.copy();
+    this.updatePdfURLs();
     this.requestUpdate();
   }
 
