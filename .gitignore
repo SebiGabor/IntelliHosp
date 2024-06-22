@@ -12,3 +12,4 @@ types
 .flaskenv*
 !.env.project
 !.env.vault
+test/coverage
