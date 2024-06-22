@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PDFDocument, PDFPage, rgb } from 'pdf-lib';
+import { base64ToUint8Array } from '../utils/common';
 
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
@@ -25,6 +26,7 @@ export class PersonnelCompletePlan extends LitElement {
   @state() pdfFetched: boolean = false;
   @state() pdfWidth: number = -1;
   @state() recipientEmail: string = '';
+  @state() customFont: any = null;
 
   static styles = css`
     input[type="file"] {
@@ -130,8 +132,9 @@ export class PersonnelCompletePlan extends LitElement {
         const { pdf_content, saved_text_boxes } = await response.json();
 
         if (pdf_content) {
-          const pdfBytes = Uint8Array.from(atob(pdf_content), c => c.charCodeAt(0));
+          const pdfBytes = base64ToUint8Array(pdf_content);
           this.pdfDoc = await PDFDocument.load(pdfBytes);
+          this.customFont = this.pdfDocCopy?.embedFont("TimesRoman");
 
           this.updatePdfURLs();
 
@@ -193,7 +196,7 @@ export class PersonnelCompletePlan extends LitElement {
     }));
 }
 
-  constructTextFields() {
+  async constructTextFields() {
     if (!this.pdfDoc) return;
 
     const pdfElement = this.shadowRoot?.querySelector('embed');
@@ -205,7 +208,7 @@ export class PersonnelCompletePlan extends LitElement {
     for (let i = 0; i < this.pdfDoc.getPageCount() || 0; i++) {
       const page = this.pdfDoc.getPage(i);
 
-      this.savedTextBoxes.forEach((iterator) => {
+      this.savedTextBoxes.forEach(async (iterator) => {
         if (iterator.page == i) {
           const pdfTextField = form.createTextField(iterator.textBox.fieldId);
           pdfTextField.setText(iterator.textBox.text);
@@ -218,6 +221,7 @@ export class PersonnelCompletePlan extends LitElement {
             textColor: rgb(0, 0, 0),
             backgroundColor: rgb(1, 1, 1),
             borderColor: rgb(0, 0, 0),
+            font: this.customFont,
           });
         }
       });

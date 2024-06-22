@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PDFDocument, PDFPage, rgb } from 'pdf-lib';
+import { base64ToUint8Array } from '../utils/common';
 
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
@@ -130,7 +131,7 @@ export class AdminCarePlan extends LitElement {
         const { pdf_content, saved_text_boxes } = await response.json();
 
         if (pdf_content) {
-          const pdfBytes = Uint8Array.from(atob(pdf_content), c => c.charCodeAt(0));
+          const pdfBytes = base64ToUint8Array(pdf_content);
           this.pdfDoc = await PDFDocument.load(pdfBytes);
 
           this.pdfPages = [];
