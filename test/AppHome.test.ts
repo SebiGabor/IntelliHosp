@@ -29,7 +29,6 @@ describe('AppHome Component', () => {
       passwordInput.value = 'testpass';
       passwordInput.dispatchEvent(new CustomEvent('sl-input', { detail: { value: 'testpass' } }));
 
-      // Triggering property update manually if needed
       element.username = 'testuser';
       element.password = 'testpass';
 

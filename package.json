@@ -15,7 +15,7 @@
     "start-remote": "npx vite --host",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "ui": "vitest --ui"
+    "ui": "vitest run --coverage && vitest --ui --coverage.enabled=true"
   },
   "author": "",
   "license": "ISC",
@@ -75,6 +75,7 @@
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^16.0.0",
     "@types/blob-stream": "^0.1.33",
+    "@types/jest": "^29.5.12",
     "@types/mocha": "^10.0.7",
     "@types/node": "^20.14.2",
     "@types/pdfjs-dist": "^2.10.378",
