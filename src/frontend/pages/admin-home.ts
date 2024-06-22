@@ -13,7 +13,7 @@ export class AdminHome extends LitElement {
         display: block;
         margin: auto;
         max-width: 800px;
-        padding-top: 40px; /* Adjust as needed to move the card higher */
+        padding-top: 40px;
     }
 
     main {

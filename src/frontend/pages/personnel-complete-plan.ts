@@ -6,12 +6,12 @@ import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import { registerIconLibrary } from '@shoelace-style/shoelace/dist/utilities/icon-library.js';
-//import { text } from 'body-parser';
 
 @customElement('personnel-complete-plan')
 export class PersonnelCompletePlan extends LitElement {
   @state() pdfFile: File | null = null;
   @state() pdfDoc: PDFDocument | null = null;
+  @state() pdfDocCopy: PDFDocument | null = null;
   @state() pdfPages: PDFPage[] = [];
   @state() currentPageIndex: number = 0;
   @state() pageDataUrls: string[] = [];
@@ -24,6 +24,7 @@ export class PersonnelCompletePlan extends LitElement {
   @state() textFieldsConstructed: boolean = false;
   @state() pdfFetched: boolean = false;
   @state() pdfWidth: number = -1;
+  @state() recipientEmail: string = '';
 
   static styles = css`
     input[type="file"] {
@@ -99,7 +100,7 @@ export class PersonnelCompletePlan extends LitElement {
       position: absolute;
       top: 0;
       right: 0;
-      padding: 4px; /* Optional: Add padding for spacing */
+      padding: 4px;
     }
   `;
 
@@ -221,23 +222,9 @@ export class PersonnelCompletePlan extends LitElement {
         }
       });
     }
+
+    form.flatten();
     this.textFieldsConstructed = true;
-
-    this.updatePdfURLs();
-  }
-
-  destructTextFields() {
-    if (!this.pdfDoc) return;
-
-    const form = this.pdfDoc.getForm();
-
-    for (let i = 0; i < this.pdfDoc.getPageCount() || 0; i++) {
-      this.savedTextBoxes.forEach((iterator) => {
-        if (iterator.page == i) {
-          form.removeField(form.getField(iterator.textBox.fieldId));
-        }
-      });
-    }
 
     this.updatePdfURLs();
   }
@@ -252,6 +239,8 @@ export class PersonnelCompletePlan extends LitElement {
   async handleDownloadPdf() {
     if (this.pageDataUrls.length === 0 || !this.pdfDoc) return;
 
+    this.pdfDocCopy = await this.pdfDoc.copy();
+
     this.constructTextFields();
 
     const finalPdfBytes = await this.pdfDoc.save();
@@ -262,7 +251,8 @@ export class PersonnelCompletePlan extends LitElement {
     downloadLink.download = 'modified_combined_pdf.pdf';
     downloadLink.click();
 
-    this.destructTextFields();
+    this.pdfDoc = await this.pdfDocCopy.copy();
+    this.updatePdfURLs();
     this.requestUpdate();
   }
 
@@ -323,12 +313,12 @@ export class PersonnelCompletePlan extends LitElement {
         console.error('Server Error:', errorData);
         alert(`Eroare la salvarea planului: ${errorData.error}`);
       } else {
-        alert('Eroare la salvarea planului!');
+        alert('Eroare la salvarea planului');
         console.error('Failed to save plan:', response.statusText);
       }
     } catch (error) {
       console.error('Error saving configuration:', error);
-      alert('Eroare la salvarea planului!');
+      alert('Eroare la salvarea planului');
     }
   }
 
@@ -338,11 +328,50 @@ export class PersonnelCompletePlan extends LitElement {
     if (textBox) {
       textBox.textBox.text = input.value;
     }
+    this.requestUpdate();
   }
 
   getPdfWidth() {
     this.pdfWidth = this.shadowRoot?.querySelector('embed')?.getBoundingClientRect().left || 0;
   }
+
+  async handleSendEmail() {
+    if (this.pageDataUrls.length === 0 || !this.pdfDoc) return;
+
+    try {
+      this.pdfDocCopy = await this.pdfDoc.copy();
+      this.constructTextFields();
+      const finalPdfBytes = await this.pdfDoc.save();
+
+      const response = await fetch('/send-email-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pdfBytes: Array.from(finalPdfBytes),
+          email: this.recipientEmail
+        })
+      });
+
+      if (response.ok) {
+        alert('Email trimis cu success!');
+        this.pdfDoc = await this.pdfDocCopy?.copy();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to send email:', errorData);
+        alert(`Eroare la trimitere email: ${errorData.error}`);
+        this.pdfDoc = await PDFDocument.create();
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert('Eroare la trimitere email');
+    } finally {
+      this.updatePdfURLs();
+      this.requestUpdate();
+    }
+  }
+
 
   render() {
     const pageDataUrl = this.pageDataUrls[this.currentPageIndex];
@@ -369,6 +398,12 @@ export class PersonnelCompletePlan extends LitElement {
             <div style="margin-right: 5%;">
               <sl-button variant="primary" @click="${this.handleDownloadPdf}">
                 Descarcă pdf <sl-icon name="file-earmark-arrow-down-fill"></sl-icon>
+              </sl-button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <sl-input placeholder="Adresă de email" type="email" @input="${(e: Event) => this.recipientEmail = (e.target as HTMLInputElement).value}"></sl-input>
+              <sl-button variant="primary" @click="${this.handleSendEmail}" ?disabled="${!this.recipientEmail}">
+                Trimite email <sl-icon name="envelope-fill"></sl-icon>
               </sl-button>
             </div>
           ` : ''}

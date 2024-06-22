@@ -101,7 +101,7 @@ export class AdminCarePlan extends LitElement {
       position: absolute;
       top: 0;
       right: 0;
-      padding: 4px; /* Optional: Add padding for spacing */
+      padding: 4px;
     }
 
   `;
@@ -164,14 +164,15 @@ export class AdminCarePlan extends LitElement {
                 height: entry.textBox.height,
                 text: entry.textBox.text || ''
               },
+              scale: {
+                x: entry.scale.x,
+                y: entry.scale.y
+              },
               confirmed: true
             }));
           }
-          console.log(this.savedTextBoxes);
 
           this.requestUpdate();
-
-          console.log(this.savedTextBoxes);
 
         } else {
           console.error('PDF content not found in response data');
@@ -486,10 +487,10 @@ export class AdminCarePlan extends LitElement {
       });
 
       if (response.ok) {
-        alert('Configuration saved successfully!');
+        alert('Plan salvat cu succes!');
         this.requestUpdate();
       } else {
-        alert('Failed to save configuration');
+        alert('Eroare la salvarea planului');
       }
     } catch (error) {
       console.error('Error saving configuration:', error);

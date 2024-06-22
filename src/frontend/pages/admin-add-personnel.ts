@@ -9,8 +9,8 @@ import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 
-@customElement('personnel-add-patient')
-export class PersonnelAddPatient extends LitElement {
+@customElement('admin-add-personnel')
+export class AdminAddPersonnel extends LitElement {
   static styles = [
     sharedStyles,
     styles,
@@ -60,16 +60,18 @@ export class PersonnelAddPatient extends LitElement {
 
   render() {
     return html`
-      <app-header ?enableBack="${true}" .backPath="${'personnel-home'}"></app-header>
+      <app-header ?enableBack="${true}" .backPath="${'admin-personnel'}"></app-header>
 
       <main>
-        <h2>Adaugă un pacient nou</h2>
+        <h2>Adaugă personal spital</h2>
 
         <sl-card>
           <form @submit=${this.handleSubmit}>
+            <sl-input label="Calificare" name="calificare" required></sl-input>
+            <sl-input label="Prenume" name="prenume" required></sl-input>
             <sl-input label="Nume" name="nume" required></sl-input>
-            <sl-input label="CNP" name="cnp" required></sl-input>
-            <sl-button variant="primary" type="submit">Adaugă pacient</sl-button>
+            <sl-input label="Email" name="email" type="email" required></sl-input>
+            <sl-button variant="primary" type="submit">Adaugă personal</sl-button>
           </form>
         </sl-card>
       </main>
@@ -83,25 +85,27 @@ async handleSubmit(event: Event) {
         const formData = new FormData(event.target as HTMLFormElement);
         const formDataObject = Object.fromEntries(formData.entries());
 
-        const response = await fetch('/personnel-add-patient', {
+        const response = await fetch('/admin-add-personnel', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            calificare: formDataObject.calificare,
             nume: formDataObject.nume,
-            cnp: formDataObject.cnp
+            prenume: formDataObject.prenume,
+            email: formDataObject.email
           })
         });
 
         if (!response.ok) {
-          alert('Eroare la adăugarea pacientului');
+          alert('Eroare la adăugarea personalului');
           return;
         }
 
-        alert('Pacientul a fost adăugat cu succes');
+        alert('Personal adăugat cu succes!');
 
-        router.navigate(resolveRouterPath('personnel-home'));
+        router.navigate(resolveRouterPath('admin-personnel'));
 
       } catch (error) {
         console.error('Error during login:', error);

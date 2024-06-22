@@ -19,15 +19,15 @@ export class PersonnelHome extends LitElement {
     css`
       :host {
         display: block;
-        margin: auto; /* Center the component horizontally */
-        max-width: 800px; /* Set maximum width for responsiveness */
+        margin: auto;
+        max-width: 800px;
       }
 
       main {
         display: flex;
         flex-direction: column;
-        align-items: center; /* Center its children horizontally */
-        padding: 20px; /* Add padding for spacing */
+        align-items: center;
+        padding: 20px;
       }
 
       .header {
@@ -40,8 +40,8 @@ export class PersonnelHome extends LitElement {
       }
 
       sl-card {
-        width: 100%; /* Make the card responsive */
-        max-width: 600px; /* Set maximum width for responsiveness */
+        width: 100%;
+        max-width: 600px;
       }
 
       table {

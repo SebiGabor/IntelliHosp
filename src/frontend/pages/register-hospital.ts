@@ -109,7 +109,7 @@ export class AppRegister extends LitElement {
       router.navigate(resolveRouterPath('hospRegisterSuccess'));
 
     } catch (error) {
-      alert('A apărut o eroare la înregistrarea spitalului. Vă rugăm să încercați din nou.');
+      alert('Eroare la înregistrarea spitalului');
       console.error('Error registering hospital:', error);
     }
   }
