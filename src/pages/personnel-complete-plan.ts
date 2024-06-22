@@ -241,6 +241,7 @@ export class PersonnelCompletePlan extends LitElement {
     if (index >= 0 && index < this.pdfPages.length) {
       this.currentPageIndex = index;
     }
+    this.requestUpdate();
   }
 
   async handleDownloadPdf() {
@@ -379,7 +380,7 @@ export class PersonnelCompletePlan extends LitElement {
                     style="
                       position: absolute;
                       left: ${tb.textBox.x + this.pdfWidth}px;
-                      top: ${(tb.textBox.y)}px;
+                      top: ${tb.textBox.y}px;
                       width: ${tb.textBox.width}px;
                       height: ${tb.textBox.height}px;
                     "
