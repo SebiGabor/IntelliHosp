@@ -248,7 +248,7 @@ export class PersonnelCompletePlan extends LitElement {
 
     const downloadLink = document.createElement('a');
     downloadLink.href = URL.createObjectURL(finalBlob);
-    downloadLink.download = 'modified_combined_pdf.pdf';
+    downloadLink.download = 'configuratie_plan_ingrijiri.pdf';
     downloadLink.click();
 
     this.pdfDoc = await this.pdfDocCopy.copy();
