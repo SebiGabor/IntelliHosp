@@ -367,13 +367,15 @@ app.post('/fetch-config', async (_req, res) => {
   }
 });
 
-app.post('/fetch-patient-plan', async(_req, res) => {
+app.post('/fetch-patient-plan', async(req, res) => {
   try {
+    const patientID = req.body.patientID;
+
     const query = 'SELECT encode("PDF", \'base64\') as pdf_content FROM public.ih_hospitals WHERE "ID" = $1 ORDER BY "ID" DESC LIMIT 1';
     const result = await pool.query(query, [loggedInData.getHospitalID()]);
 
-    const query2 = 'SELECT "TextFields" FROM public.ih_patients WHERE "IDspital" = $1';
-    const result2 = await pool.query(query2, [loggedInData.getHospitalID()]);
+    const query2 = 'SELECT "TextFields" FROM public.ih_patients WHERE "ID" = $1';
+    const result2 = await pool.query(query2, [patientID]);
 
     if (result.rows.length > 0 && result2.rows.length > 0) {
       const pdf_content = result.rows[0].pdf_content;

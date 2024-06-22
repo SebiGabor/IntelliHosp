@@ -7,6 +7,7 @@ import { styles as sharedStyles } from '../styles/shared-styles';
 
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import { registerIconLibrary } from '@shoelace-style/shoelace/dist/utilities/icon-library.js';
 
@@ -74,8 +75,9 @@ export class PersonnelHome extends LitElement {
     `
   ];
 
-  @state()
-  patients: any[] = [];
+  @state() patients: any[] = [];
+  @state() private searchQuery: string = '';
+
 
   async firstUpdated() {
     registerIconLibrary('default', {
@@ -110,6 +112,19 @@ export class PersonnelHome extends LitElement {
     router.navigate(resolveRouterPath('personnel-complete-plan'));
   }
 
+  private get filteredPatients() {
+    const query = this.searchQuery.toLowerCase().trim();
+    if (!query) {
+      return this.patients;
+    } else {
+      return this.patients.filter(person =>
+        person.Nume.toLowerCase().includes(query) ||
+        person.CNP.toLowerCase().includes(query)
+      );
+    }
+  }
+
+
   render() {
     return html`
       <app-header ?enableLogOut="${true}"></app-header>
@@ -118,6 +133,16 @@ export class PersonnelHome extends LitElement {
         <div class="header">
           <h2>Pacienți spital</h2>
           <sl-button href="${resolveRouterPath('personnel-add-patient')}" variant="primary">Adaugă un pacient nou</sl-button>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <span style="margin-right: 10px;">Caută după nume sau CNP:</span>
+          <sl-input
+            style="flex: 1;"
+            @input=${(e: InputEvent) => {
+              this.searchQuery = (e.target as HTMLInputElement).value;
+            }}
+          ></sl-input>
         </div>
 
         <sl-card>
@@ -131,7 +156,7 @@ export class PersonnelHome extends LitElement {
                 </tr>
               </thead>
               <tbody>
-                ${this.patients.map(person => html`
+                ${this.filteredPatients.map(person => html`
                   <tr>
                     <td>${person.Nume}</td>
                     <td>${person.CNP}</td>

@@ -120,7 +120,10 @@ export class PersonnelCompletePlan extends LitElement {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          patientID: localStorage.getItem('selectedPatientId')
+        })
       });
       if (response.ok) {
         const { pdf_content, saved_text_boxes } = await response.json();
@@ -153,6 +156,8 @@ export class PersonnelCompletePlan extends LitElement {
               }
             }));
           }
+
+          console.log(this.savedTextBoxes);
 
           this.pdfFetched = true;
 
