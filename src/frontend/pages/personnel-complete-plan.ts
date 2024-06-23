@@ -211,7 +211,6 @@ export class PersonnelCompletePlan extends LitElement {
       this.savedTextBoxes.forEach(async (iterator) => {
         if (iterator.page == i) {
           const pdfTextField = form.createTextField(iterator.textBox.fieldId);
-          pdfTextField.setText(iterator.textBox.text);
           pdfTextField.addToPage(page, {
             x: iterator.textBox.x * iterator.scale.x,
             y: (pdfRenderedHeight - iterator.textBox.y - iterator.textBox.height) * iterator.scale.y,
@@ -223,6 +222,9 @@ export class PersonnelCompletePlan extends LitElement {
             borderColor: rgb(0, 0, 0),
             font: this.customFont,
           });
+          pdfTextField.setText(iterator.textBox.text);
+          pdfTextField.enableMultiline();
+          pdfTextField.setFontSize(12);
         }
       });
     }
@@ -429,7 +431,7 @@ export class PersonnelCompletePlan extends LitElement {
                       height: ${tb.textBox.height}px;
                     "
                   >
-                    <input
+                    <textarea
                       type="text"
                       .value="${tb.textBox.text || ''}"
                       @input="${(e: Event) => this.handleTextInput(e, tb.textBox.fieldId)}"
@@ -438,8 +440,9 @@ export class PersonnelCompletePlan extends LitElement {
                         height: 100%;
                         border: none;
                         background: transparent;
+                        resize: none;
                       "
-                    />
+                    /></textarea>
                   </div>
                 `)}
             </div>
