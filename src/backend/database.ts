@@ -22,15 +22,14 @@ const upload = multer({
 const allowedOrigins = ['http://localhost:5173', 'https://white-grass-078bf751e.5.azurestaticapps.net'];
 
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
-const DB_PORT = process.env.DB_PORT || 5432;
+const DB_PORT = process.env.DB_PORT || 6543;
 
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
-  port: Number(DB_PORT),
-  ssl: true
+  port: Number(DB_PORT)
 });
 
 app.use(bodyParser.json({ limit: '50mb' }));
