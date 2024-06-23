@@ -98,7 +98,7 @@ app.post('/add-hospital', async (req, res) => {
       from: process.env.EMAIL_USER,
       to: adminEmail,
       subject: 'Confirmare înregistrare spital - IntelliHosp',
-      text: `Bine ați venit în aplicația IntelliHosp!\n\n Credențialele de logare pentru ${hospitalName} sunt:\nUsername: ${username}\nParolă: ${password}\n\nVă mulțumim pentru alegerea făcută!`,
+      text: `Bine ați venit în aplicația IntelliHosp!\n\n Datele de logare pentru ${hospitalName} sunt:\nUsername: ${username}\nParolă: ${password}\n\nVă mulțumim pentru alegerea făcută!`,
     };
 
     transporter.sendMail(mailOptions, (error: any, info: { response: string; }) => {
@@ -301,7 +301,7 @@ app.post('/admin-add-personnel', async (req, res) => {
       from: process.env.EMAIL_USER,
       to: email,
       subject: 'Confirmare înregistrare în IntelliHosp',
-      text: `Bine ați venit în aplicația IntelliHosp!\n\n Ați fost adăugat în aplicația IntelliHosp ca făcând parte din ${loggedInData.getHospitalName()}\n\n Credențialele dumneavoastră de logare pentru sunt:\nUsername: ${username}\nParolă: ${password}\n\nVă mulțumim pentru alegerea făcută!`,
+      text: `Bine ați venit în aplicația IntelliHosp!\n\n Ați fost adăugat în aplicația IntelliHosp ca făcând parte din ${loggedInData.getHospitalName()}\n\n Datele dumneavoastră de logare sunt:\nUsername: ${username}\nParolă: ${password}\n\nVă mulțumim pentru alegerea făcută!`,
     };
 
     transporter.sendMail(mailOptions, (error: any, info: { response: string; }) => {
