@@ -138,7 +138,7 @@ export class PersonnelCompletePlan extends LitElement {
 
           this.updatePdfURLs();
 
-          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
           this.pdfFile = new File([blob], 'fetched.pdf', { type: 'application/pdf' });
 
           this.currentPageIndex = 0;
@@ -191,7 +191,7 @@ export class PersonnelCompletePlan extends LitElement {
       const copiedPage = await newDocument.copyPages(this.pdfDoc!, [this.pdfPages.indexOf(page)]);
       newDocument.addPage(copiedPage[0]);
       const pdfBytes = await newDocument.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
       return URL.createObjectURL(blob);
     }));
 }
@@ -250,7 +250,7 @@ export class PersonnelCompletePlan extends LitElement {
     this.constructTextFields();
 
     const finalPdfBytes = await this.pdfDoc.save();
-    const finalBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+    const finalBlob = new Blob([finalPdfBytes as BlobPart], { type: 'application/pdf' });
 
     const downloadLink = document.createElement('a');
     downloadLink.href = URL.createObjectURL(finalBlob);

@@ -41,7 +41,7 @@
     "pg": "^8.12.0",
     "sinon": "^18.0.0",
     "sinon-chai": "^3.7.0",
-    "typescript": "^5.5.2",
+    "typescript": "^5.9.3",
     "urlpattern-polyfill": "^7.0.0",
     "workbox-build": "^6.5.2"
   },
