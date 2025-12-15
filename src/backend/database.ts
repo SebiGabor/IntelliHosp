@@ -88,8 +88,8 @@ app.post('/add-hospital', async (req, res) => {
       numbers: true
     });
 
-    const insertQuery = 'INSERT INTO public.ih_hospitals ("Nume", "Judet", "AdminEmail", "AdminUsername", "AdminPassword") VALUES ($1, $2, $3, $4, $5)';
-    const result = await client.query(insertQuery, [hospitalName, county, adminEmail, username, password]);
+    const insertQuery = 'INSERT INTO public.ih_hospitals ("ID", "Nume", "Judet", "AdminEmail", "AdminUsername", "AdminPassword") VALUES ($6, $1, $2, $3, $4, $5)';
+    const result = await client.query(insertQuery, [hospitalName, county, adminEmail, username, password, sequenceValue]);
     client.release();
 
     const mailOptions = {
